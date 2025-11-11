@@ -4,12 +4,12 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
-import androidx.compose.material.icons.outlined.MoreVert
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -20,19 +20,28 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.musicfilemanager.ui.theme.*
 
 /* -------------------- Public API -------------------- */
 
+@Preview
 @Composable
 fun StatsScreen(
-    onBack: () -> Unit = {}
+    onBack: () -> Unit = {},
+    onBottomItemClick: (String) -> Unit = {}
 ) {
     Scaffold(
         topBar = { PillTopBar(title = "Báo cáo Thống kê", onBack = onBack) },
-        containerColor = Gray900
+        containerColor = Gray900,
+        bottomBar = {
+            BottomNavBar(
+                current = "home",
+                onClick = onBottomItemClick
+            )
+        }
     ) { inner ->
         LazyColumn(
             modifier = Modifier
@@ -225,7 +234,7 @@ private fun NeonRing(progress: Float, size: Dp, stroke: Dp, centerText: String) 
     val grad = Brush.sweepGradient(listOf(Color(0xFF5AC8FA), Color(0xFFB06BF7), Color(0xFF5AC8FA)))
     Box(contentAlignment = Alignment.Center, modifier = Modifier.size(size)) {
         Canvas(Modifier.fillMaxSize()) {
-            val s = size.minDimension
+            val s = minOf(this.size.width, this.size.height)
             val pad = stroke.toPx() / 2
             val arcSize = Size(s - stroke.toPx(), s - stroke.toPx())
             // background ring
@@ -257,9 +266,9 @@ private fun DonutChart(
     val sweep = values.map { it / total * (360f - gapDegrees * values.size) }
     Canvas(Modifier.size(size)) {
         var start = -90f
-        val rect = Size(size.minDimension, size.minDimension)
+        val s = minOf(this.size.width, this.size.height)
         val inset = thickness.toPx() / 2
-        val arcSize = Size(rect.width - thickness.toPx(), rect.height - thickness.toPx())
+        val arcSize = Size(s - thickness.toPx(), s - thickness.toPx())
         values.indices.forEach { i ->
             drawArc(
                 color = colors[i % colors.size],
@@ -363,3 +372,48 @@ private fun neonPalette() = listOf(
     Color(0xFF60E0B8),
     Color(0xFFE6A85F)
 )
+
+@Composable
+private fun BottomNavBar(current: String, onClick: (String) -> Unit) {
+    NavigationBar(containerColor = Gray800) {
+        val items = listOf(
+            "home" to Icons.Outlined.Home,
+            "library" to Icons.Outlined.MenuBook,
+            "genre" to Icons.Outlined.Category,
+            "settings" to Icons.Outlined.Settings
+        )
+        items.forEach { (id, icon) ->
+            NavigationBarItem(
+                selected = id == current,
+                onClick = { onClick(id) },
+                icon = {
+                    Box(
+                        Modifier
+                            .size(26.dp)
+                            .clip(CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(icon, null)
+                    }
+                },
+                label = {
+                    Text(
+                        when (id) {
+                            "home" -> "Trang chủ"
+                            "library" -> "Thư viện"
+                            "genre" -> "thể loại"
+                            else -> "Cài đặt"
+                        }
+                    )
+                },
+                colors = NavigationBarItemDefaults.colors(
+                    selectedIconColor = AccentPurple,
+                    selectedTextColor = AccentPurple,
+                    indicatorColor = Gray700,
+                    unselectedIconColor = TextSecondary,
+                    unselectedTextColor = TextSecondary
+                )
+            )
+        }
+    }
+}

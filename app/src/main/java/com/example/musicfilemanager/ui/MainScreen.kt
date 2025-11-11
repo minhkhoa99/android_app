@@ -9,6 +9,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
+import androidx.compose.material.icons.outlined.Category
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -40,7 +41,8 @@ fun MainScreen(
     onAddClick: () -> Unit = {},
     onBottomItemClick: (String) -> Unit = {},
     onItemClick: (String) -> Unit = {},
-
+    onEditClick: (String) -> Unit = {},
+    onDeleteClick: (String) -> Unit = {}
 ) {
     var query by remember { mutableStateOf("") }
     var selected by remember { mutableStateOf(Genre.All) }
@@ -85,7 +87,11 @@ fun MainScreen(
                 onSelected = { selected = it }
             )
             Spacer(Modifier.height(12.dp))
-            MusicList(data)
+            MusicList(
+                data = data,
+                onEditClick = onEditClick,
+                onDeleteClick = onDeleteClick
+            )
         }
     }
 }
@@ -157,20 +163,32 @@ private fun FilterChips(
 }
 
 @Composable
-private fun MusicList(data: List<Music>) {
+private fun MusicList(
+    data: List<Music>,
+    onEditClick: (String) -> Unit = {},
+    onDeleteClick: (String) -> Unit = {}
+) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(12.dp),
         contentPadding = PaddingValues(bottom = 84.dp) // chừa chỗ FAB + bottom bar
     ) {
         items(data, key = { it.id }) { item ->
-            MusicCard(item)
+            MusicCard(
+                music = item,
+                onEditClick = { onEditClick(item.id) },
+                onDeleteClick = { onDeleteClick(item.id) }
+            )
         }
     }
 }
 
 @Composable
-private fun MusicCard(m: Music) {
+private fun MusicCard(
+    music: Music,
+    onEditClick: () -> Unit = {},
+    onDeleteClick: () -> Unit = {}
+) {
     Surface(
         color = Gray800,
         shape = RoundedCornerShape(16.dp),
@@ -197,21 +215,21 @@ private fun MusicCard(m: Music) {
 
             Column(Modifier.weight(1f)) {
                 Text(
-                    text = m.title,
+                    text = music.title,
                     color = TextPrimary,
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.W700),
                     maxLines = 1, overflow = TextOverflow.Ellipsis
                 )
                 Spacer(Modifier.height(2.dp))
                 Text(
-                    text = "${m.artist}  •  ${m.album}",
+                    text = "${music.artist}  •  ${music.album}",
                     color = TextSecondary,
                     style = MaterialTheme.typography.bodySmall,
                     maxLines = 1, overflow = TextOverflow.Ellipsis
                 )
                 Spacer(Modifier.height(2.dp))
                 Text(
-                    text = m.duration,
+                    text = music.duration,
                     color = TextSecondary,
                     style = MaterialTheme.typography.labelSmall
                 )
@@ -226,7 +244,35 @@ private fun MusicCard(m: Music) {
                     .background(TagBg)
                     .padding(horizontal = 10.dp, vertical = 6.dp)
             ) {
-                Text(m.genre.name, color = TextSecondary, style = MaterialTheme.typography.labelSmall)
+                Text(music.genre.name, color = TextSecondary, style = MaterialTheme.typography.labelSmall)
+            }
+
+            Spacer(Modifier.width(8.dp))
+
+            // Nút chỉnh sửa
+            IconButton(
+                onClick = onEditClick,
+                modifier = Modifier.size(36.dp)
+            ) {
+                Icon(
+                    Icons.Outlined.Edit,
+                    contentDescription = "Chỉnh sửa",
+                    tint = AccentPurple,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+
+            // Nút xóa
+            IconButton(
+                onClick = onDeleteClick,
+                modifier = Modifier.size(36.dp)
+            ) {
+                Icon(
+                    Icons.Outlined.Delete,
+                    contentDescription = "Xóa",
+                    tint = Color(0xFFEF5350),
+                    modifier = Modifier.size(20.dp)
+                )
             }
         }
     }
@@ -238,7 +284,7 @@ private fun BottomNavBar(current: String, onClick: (String) -> Unit) {
         val items = listOf(
             "home" to Icons.Outlined.Home,
             "library" to Icons.Outlined.MenuBook,
-            "search" to Icons.Outlined.Search,
+            "genre" to Icons.Outlined.Category,
             "settings" to Icons.Outlined.Settings
         )
         items.forEach { (id, icon) ->
@@ -260,7 +306,7 @@ private fun BottomNavBar(current: String, onClick: (String) -> Unit) {
                         when (id) {
                             "home" -> "Trang chủ"
                             "library" -> "Thư viện"
-                            "search" -> "Tìm kiếm"
+                            "genre" -> "thể loại"
                             else -> "Cài đặt"
                         }
                     )

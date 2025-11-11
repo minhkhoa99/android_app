@@ -7,13 +7,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material.icons.outlined.Edit
-import androidx.compose.material.icons.outlined.Menu
-import androidx.compose.material.icons.outlined.Mic
-import androidx.compose.material.icons.outlined.MusicNote
-import androidx.compose.material.icons.outlined.Piano
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -44,7 +38,8 @@ fun GenreListScreen(
     onAdd: () -> Unit = {},
     onEdit: (String) -> Unit = {},
     onDelete: (String) -> Unit = {},
-    onOpen: (String) -> Unit = {}   // click cả item
+    onOpen: (String) -> Unit = {},   // click cả item
+    onBottomItemClick: (String) -> Unit = {}
 ) {
     Scaffold(
         topBar = {
@@ -73,7 +68,13 @@ fun GenreListScreen(
             }
         },
         floatingActionButton = { NeonFab(text = "Thêm Mới", onClick = onAdd) },
-        containerColor = Gray900
+        containerColor = Gray900,
+        bottomBar = {
+            BottomNavBar(
+                current = "genre",
+                onClick = onBottomItemClick
+            )
+        }
     ) { inner ->
         LazyColumn(
             contentPadding = PaddingValues(
@@ -88,8 +89,7 @@ fun GenreListScreen(
                     g,
                     onClick = { onOpen(g.id) },
                     onEdit = { onEdit(g.id) },
-                    onDelete = { onDelete(g.id) },
-                    onQuickAdd = { onAdd() }
+                    onDelete = { onDelete(g.id) }
                 )
             }
         }
@@ -101,8 +101,7 @@ private fun GenreCard(
     g: GenreUi,
     onClick: () -> Unit,
     onEdit: () -> Unit,
-    onDelete: () -> Unit,
-    onQuickAdd: () -> Unit
+    onDelete: () -> Unit
 ) {
     Surface(
         color = Gray800,
@@ -155,7 +154,6 @@ private fun GenreCard(
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 SmallRoundButton(icon = Icons.Outlined.Edit, onClick = onEdit)
                 SmallRoundButton(icon = Icons.Outlined.Delete, onClick = onDelete)
-                SmallRoundButton(icon = Icons.Outlined.Add, onClick = onQuickAdd)
             }
         }
     }
@@ -196,3 +194,48 @@ private fun sampleGenres() = listOf(
     GenreUi("jazz", "JAZZ", "Nhạc Jazz ngẫu hứng", 30, GenreIcon.Jazz),
     GenreUi("hiphop", "HIP HOP", "Văn hóa Hip Hop", 75, GenreIcon.HipHop)
 )
+
+@Composable
+private fun BottomNavBar(current: String, onClick: (String) -> Unit) {
+    NavigationBar(containerColor = Gray800) {
+        val items = listOf(
+            "home" to Icons.Outlined.Home,
+            "library" to Icons.Outlined.MenuBook,
+            "genre" to Icons.Outlined.Category,
+            "settings" to Icons.Outlined.Settings
+        )
+        items.forEach { (id, icon) ->
+            NavigationBarItem(
+                selected = id == current,
+                onClick = { onClick(id) },
+                icon = {
+                    Box(
+                        Modifier
+                            .size(26.dp)
+                            .clip(CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(icon, null)
+                    }
+                },
+                label = {
+                    Text(
+                        when (id) {
+                            "home" -> "Trang chủ"
+                            "library" -> "Thư viện"
+                            "genre" -> "thể loại"
+                            else -> "Cài đặt"
+                        }
+                    )
+                },
+                colors = NavigationBarItemDefaults.colors(
+                    selectedIconColor = AccentPurple,
+                    selectedTextColor = AccentPurple,
+                    indicatorColor = Gray700,
+                    unselectedIconColor = TextSecondary,
+                    unselectedTextColor = TextSecondary
+                )
+            )
+        }
+    }
+}

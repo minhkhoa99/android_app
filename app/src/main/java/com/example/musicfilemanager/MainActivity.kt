@@ -27,17 +27,46 @@ class MainActivity : ComponentActivity() {
                         MainScreen(
                             onAddClick = { nav.navigate(Routes.AddMusic) },
                             onBottomItemClick = { when (it) {
-                                "search" -> {} // optional
+                                "home" -> nav.navigate(Routes.Stats)
+                                "genre" -> nav.navigate(Routes.Genres)
                                 "settings" -> {}
                                 else -> {}
                             }},
-                            onItemClick = { id -> nav.navigate("detail/$id") }
+                            onItemClick = { id -> nav.navigate("detail/$id") },
+                            onEditClick = { id -> 
+                                // TODO: Navigate to edit screen hoặc reuse AddMusicScreen với id
+                                nav.navigate("detail/$id") 
+                            },
+                            onDeleteClick = { id ->
+                                // TODO: Hiển thị dialog xác nhận xóa
+                                // Sau khi xóa, reload danh sách
+                            }
                         )
                     }
                     composable(Routes.AddMusic) { AddMusicScreen(onBack = { nav.popBackStack() }, onSaved = { nav.popBackStack() }) }
-                    composable(Routes.Genres) { GenreListScreen(onAdd = { nav.navigate(Routes.AddGenre) }) }
+                    composable(Routes.Genres) { 
+                        GenreListScreen(
+                            onAdd = { nav.navigate(Routes.AddGenre) },
+                            onBottomItemClick = { when (it) {
+                                "home" -> nav.navigate(Routes.Stats)
+                                "library" -> nav.navigate(Routes.Library)
+                                "settings" -> {}
+                                else -> {}
+                            }}
+                        ) 
+                    }
                     composable(Routes.AddGenre) { AddGenreScreen(onBack = { nav.popBackStack() }, onSaved = { nav.popBackStack() }) }
-                    composable(Routes.Stats) { StatsScreen(onBack = { nav.popBackStack() }) }
+                    composable(Routes.Stats) { 
+                        StatsScreen(
+                            onBack = { nav.popBackStack() },
+                            onBottomItemClick = { when (it) {
+                                "library" -> nav.navigate(Routes.Library)
+                                "genre" -> nav.navigate(Routes.Genres)
+                                "settings" -> {}
+                                else -> {}
+                            }}
+                        ) 
+                    }
                     composable(
                         route = Routes.Detail,
                         arguments = listOf(navArgument("id"){ defaultValue = "1" })
