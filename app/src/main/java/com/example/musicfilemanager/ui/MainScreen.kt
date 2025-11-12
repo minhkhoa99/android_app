@@ -2,6 +2,7 @@ package com.example.musicfilemanager.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -89,6 +90,7 @@ fun MainScreen(
             Spacer(Modifier.height(12.dp))
             MusicList(
                 data = data,
+                onItemClick = onItemClick,
                 onEditClick = onEditClick,
                 onDeleteClick = onDeleteClick
             )
@@ -165,6 +167,7 @@ private fun FilterChips(
 @Composable
 private fun MusicList(
     data: List<Music>,
+    onItemClick: (String) -> Unit = {},
     onEditClick: (String) -> Unit = {},
     onDeleteClick: (String) -> Unit = {}
 ) {
@@ -176,6 +179,7 @@ private fun MusicList(
         items(data, key = { it.id }) { item ->
             MusicCard(
                 music = item,
+                onClick = { onItemClick(item.id) },
                 onEditClick = { onEditClick(item.id) },
                 onDeleteClick = { onDeleteClick(item.id) }
             )
@@ -186,6 +190,7 @@ private fun MusicList(
 @Composable
 private fun MusicCard(
     music: Music,
+    onClick: () -> Unit = {},
     onEditClick: () -> Unit = {},
     onDeleteClick: () -> Unit = {}
 ) {
@@ -197,6 +202,7 @@ private fun MusicCard(
     ) {
         Row(
             modifier = Modifier
+                .clickable { onClick() }
                 .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -251,7 +257,9 @@ private fun MusicCard(
 
             // Nút chỉnh sửa
             IconButton(
-                onClick = onEditClick,
+                onClick = {
+                    onEditClick()
+                },
                 modifier = Modifier.size(36.dp)
             ) {
                 Icon(
@@ -264,7 +272,9 @@ private fun MusicCard(
 
             // Nút xóa
             IconButton(
-                onClick = onDeleteClick,
+                onClick = {
+                    onDeleteClick()
+                },
                 modifier = Modifier.size(36.dp)
             ) {
                 Icon(

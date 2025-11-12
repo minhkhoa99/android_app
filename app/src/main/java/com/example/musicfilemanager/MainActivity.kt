@@ -34,8 +34,8 @@ class MainActivity : ComponentActivity() {
                             }},
                             onItemClick = { id -> nav.navigate("detail/$id") },
                             onEditClick = { id -> 
-                                // TODO: Navigate to edit screen hoặc reuse AddMusicScreen với id
-                                nav.navigate("detail/$id") 
+                                // Navigate đến màn chỉnh sửa
+                                nav.navigate(Routes.editMusic(id))
                             },
                             onDeleteClick = { id ->
                                 // TODO: Hiển thị dialog xác nhận xóa
@@ -43,8 +43,26 @@ class MainActivity : ComponentActivity() {
                             }
                         )
                     }
-                    composable(Routes.AddMusic) { AddMusicScreen(onBack = { nav.popBackStack() }, onSaved = { nav.popBackStack() }) }
-                    composable(Routes.Genres) { 
+                    composable(Routes.AddMusic) {
+                        AddMusicScreen(
+                            musicId = null, // null = chế độ thêm mới
+                            onBack = { nav.popBackStack() },
+                            onSaved = { nav.popBackStack() }
+                        )
+                    }
+                    // Route cho chỉnh sửa
+                    composable(
+                        route = Routes.EditMusic,
+                        arguments = listOf(navArgument("id"){ defaultValue = "1" })
+                    ) { backStack ->
+                        val id = backStack.arguments?.getString("id") ?: "1"
+                        AddMusicScreen(
+                            musicId = id, // truyền id để chỉnh sửa
+                            onBack = { nav.popBackStack() },
+                            onSaved = { nav.popBackStack() }
+                        )
+                    }
+                    composable(Routes.Genres) {
                         GenreListScreen(
                             onAdd = { nav.navigate(Routes.AddGenre) },
                             onBottomItemClick = { when (it) {

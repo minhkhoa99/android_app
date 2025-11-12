@@ -12,7 +12,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.AudioFile
@@ -43,6 +45,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.musicfilemanager.model.Genre
+import com.example.musicfilemanager.model.sampleMusics
 import com.example.musicfilemanager.ui.theme.Gray800
 import com.example.musicfilemanager.ui.theme.Gray900
 import com.example.musicfilemanager.ui.theme.TextPrimary
@@ -52,17 +55,25 @@ import com.example.musicfilemanager.ui.theme.TextSecondary
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddMusicScreen(
+    musicId: String? = null, // null = thêm mới, có giá trị = chỉnh sửa
     onBack: () -> Unit,
     onSaved: () -> Unit = {}
 ) {
+    // Lấy dữ liệu hiện có nếu đang ở chế độ chỉnh sửa
+    val existingMusic = remember(musicId) {
+        musicId?.let { id -> sampleMusics.find { it.id == id } }
+    }
+
+    val isEditMode = existingMusic != null
+
     var fileUri by remember { mutableStateOf<Uri?>(null) }
-    var title by remember { mutableStateOf("") }
-    var artist by remember { mutableStateOf("") }
-    var album by remember { mutableStateOf("") }
-    var year by remember { mutableStateOf("") }
-    var duration by remember { mutableStateOf("") }
-    var size by remember { mutableStateOf("") }
-    var genre by remember { mutableStateOf(Genre.Pop) }
+    var title by remember { mutableStateOf(existingMusic?.title ?: "") }
+    var artist by remember { mutableStateOf(existingMusic?.artist ?: "") }
+    var album by remember { mutableStateOf(existingMusic?.album ?: "") }
+    var year by remember { mutableStateOf("2020") }
+    var duration by remember { mutableStateOf(existingMusic?.duration ?: "") }
+    var size by remember { mutableStateOf("5.0 MB") }
+    var genre by remember { mutableStateOf(existingMusic?.genre ?: Genre.Pop) }
     var expanded by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
 
@@ -73,13 +84,19 @@ fun AddMusicScreen(
                 fileUri = uri
                 // gợi ý: đọc metadata thật ở đây (sau sẽ nối ContentResolver/MediaMetadataRetriever)
             }
+            // Nếu uri == null, user đã cancel picker → không làm gì cả, quay về form
         }
     )
 
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Thêm File Nhạc", style = MaterialTheme.typography.titleLarge) },
+                title = {
+                    Text(
+                        if (isEditMode) "Chỉnh Sửa File Nhạc" else "Thêm File Nhạc",
+                        style = MaterialTheme.typography.titleLarge
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, null) }
                 }
@@ -91,6 +108,7 @@ fun AddMusicScreen(
             Modifier
                 .padding(inner)
                 .fillMaxSize()
+                .verticalScroll(rememberScrollState())
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -110,7 +128,13 @@ fun AddMusicScreen(
                         // chỉ cho chọn âm thanh
                         pickMusic.launch(arrayOf("audio/*", "application/octet-stream"))
                     }) {
-                        Text(if (fileUri == null) "Chọn File Nhạc" else "Đã chọn file")
+                        Text(
+                            if (fileUri == null) {
+                                if (isEditMode) "Chọn File Mới (tùy chọn)" else "Chọn File Nhạc"
+                            } else {
+                                "Đã chọn file"
+                            }
+                        )
                     }
                 }
             }
@@ -174,13 +198,22 @@ fun AddMusicScreen(
             Spacer(Modifier.height(20.dp))
 
             GradientButton(
-                text = "Lưu",
+                text = if (isEditMode) "Cập Nhật" else "Lưu",
                 modifier = Modifier.fillMaxWidth()
             ) {
                 // Validate đơn giản
-                if (fileUri == null || title.isBlank()) {
-                    error = "Vui lòng chọn file và nhập Tên Bài Hát."
-                    return@GradientButton
+                if (isEditMode) {
+                    // Ở chế độ chỉnh sửa, chỉ cần có title
+                    if (title.isBlank()) {
+                        error = "Vui lòng nhập Tên Bài Hát."
+                        return@GradientButton
+                    }
+                } else {
+                    // Ở chế độ thêm mới, cần cả file và title
+                    if (fileUri == null || title.isBlank()) {
+                        error = "Vui lòng chọn file và nhập Tên Bài Hát."
+                        return@GradientButton
+                    }
                 }
                 error = null
                 // TODO: lưu vào Room/Repository rồi:
