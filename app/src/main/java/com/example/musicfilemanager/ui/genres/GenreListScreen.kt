@@ -16,23 +16,90 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.musicfilemanager.ui.theme.*
+import com.example.musicfilemanager.viewmodel.GenreViewModel
 
 
-@Preview
 @Composable
 fun GenreListScreen(
-    genres: List<GenreUi> = sampleGenres(),
+    viewModel: GenreViewModel = viewModel(),
     onBack: () -> Unit = {},
     onAdd: () -> Unit = {},
     onEdit: (String) -> Unit = {},
-    onDelete: (String) -> Unit = {},
-    onOpen: (String) -> Unit = {},   // click cả item
+    onOpen: (String) -> Unit = {},
     onBottomItemClick: (String) -> Unit = {}
 ) {
+    // Collect states from ViewModel
+    val genres by viewModel.genres.collectAsState()
+    val genresWithId by viewModel.genresWithId.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    val error by viewModel.error.collectAsState()
+    val successMessage by viewModel.successMessage.collectAsState()
+
+    // Delete confirmation dialog state
+    var genreToDelete by remember { mutableStateOf<GenreUi?>(null) }
+
+    // Snackbar host state
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    // Show success message
+    LaunchedEffect(successMessage) {
+        successMessage?.let {
+            snackbarHostState.showSnackbar(
+                message = it,
+                duration = SnackbarDuration.Short
+            )
+            viewModel.clearSuccessMessage()
+        }
+    }
+
+    // Show error message
+    LaunchedEffect(error) {
+        error?.let {
+            snackbarHostState.showSnackbar(
+                message = it,
+                duration = SnackbarDuration.Long,
+                actionLabel = "Đóng"
+            )
+        }
+    }
+
+    // Convert Genre to GenreUi for display with API IDs
+    val genresUi = remember(genres, genresWithId) {
+        genres.filter { it.id != "all" }.map { genre ->
+            val withId = genresWithId.find { it.genre.id == genre.id }
+            GenreUi(
+                id = genre.id,
+                apiId = withId?.apiId,
+                name = genre.name,
+                description = withId?.description ?: "Thể loại ${genre.name}",
+                ageRange = withId?.ageRange,
+                fileCount = withId?.totalFiles ?: 0,
+                icon = when (genre.id.lowercase()) {
+                    "rock" -> GenreIcon.Rock
+                    "pop" -> GenreIcon.Pop
+                    "jazz" -> GenreIcon.Jazz
+                    "hiphop", "hip hop" -> GenreIcon.HipHop
+                    else -> GenreIcon.Pop
+                }
+            )
+        }
+    }
+
+    // Show success snackbar
+    LaunchedEffect(successMessage) {
+        successMessage?.let {
+            // Auto clear after showing
+            kotlinx.coroutines.delay(2000)
+            viewModel.clearSuccessMessage()
+        }
+    }
+
     Scaffold(
         topBar = {
             @Composable
@@ -61,7 +128,10 @@ fun GenreListScreen(
                                 style = MaterialTheme.typography.titleMedium,
                                 modifier = Modifier.weight(1f)
                             )
-                            Spacer(Modifier.width(40.dp))
+                            // Refresh button
+                            IconButton(onClick = { viewModel.loadGenres() }) {
+                                Icon(Icons.Outlined.Refresh, "Làm mới", tint = TextPrimary)
+                            }
                         }
                     }
                 }
@@ -75,24 +145,132 @@ fun GenreListScreen(
                 current = "genre",
                 onClick = onBottomItemClick
             )
+        },
+        snackbarHost = {
+            SnackbarHost(hostState = snackbarHostState)
         }
     ) { inner ->
-        LazyColumn(
-            contentPadding = PaddingValues(
-                top = inner.calculateTopPadding() + 16.dp,
-                bottom = inner.calculateBottomPadding() + 100.dp,
-                start = 16.dp, end = 16.dp
-            ),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(inner)
         ) {
-            items(genres, key = { it.id }) { g ->
-                GenreCard(
-                    g,
-                    onClick = { onOpen(g.id) },
-                    onEdit = { onEdit(g.id) },
-                    onDelete = { onDelete(g.id) }
-                )
+            when {
+                isLoading && genresUi.isEmpty() -> {
+                    // Initial loading
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            CircularProgressIndicator(color = AccentPurple)
+                            Spacer(Modifier.height(16.dp))
+                            Text("Đang tải thể loại...", color = TextSecondary)
+                        }
+                    }
+                }
+                genresUi.isEmpty() -> {
+                    // Empty state
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.padding(32.dp)
+                        ) {
+                            Icon(
+                                Icons.Outlined.Category,
+                                contentDescription = null,
+                                modifier = Modifier.size(64.dp),
+                                tint = TextSecondary
+                            )
+                            Spacer(Modifier.height(16.dp))
+                            Text(
+                                "Chưa có thể loại nào",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = TextPrimary,
+                                textAlign = TextAlign.Center
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                "Nhấn nút 'Thêm Mới' để tạo thể loại đầu tiên",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = TextSecondary,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+                }
+                else -> {
+                    LazyColumn(
+                        contentPadding = PaddingValues(
+                            top = 16.dp,
+                            bottom = 100.dp,
+                            start = 16.dp,
+                            end = 16.dp
+                        ),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(genresUi, key = { it.id }) { g ->
+                            GenreCard(
+                                g,
+                                onClick = { onOpen(g.id) },
+                                onEdit = { onEdit(g.id) },
+                                onDelete = {
+                                    // Show confirmation dialog
+                                    genreToDelete = g
+                                }
+                            )
+                        }
+                    }
+
+                    // Loading overlay when refreshing
+                    if (isLoading) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            contentAlignment = Alignment.TopCenter
+                        ) {
+                            LinearProgressIndicator(
+                                color = AccentPurple,
+                                modifier = Modifier
+                                    .fillMaxWidth(0.5f)
+                                    .clip(RoundedCornerShape(8.dp))
+                            )
+                        }
+                    }
+                }
             }
+        }
+
+        // Delete Confirmation Dialog
+        genreToDelete?.let { genre ->
+            AlertDialog(
+                onDismissRequest = { genreToDelete = null },
+                title = { Text("Xóa Thể Loại?") },
+                text = {
+                    Text("Bạn có chắc muốn xóa thể loại \"${genre.name}\"?\n\nThao tác này không thể hoàn tác.")
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            genre.apiId?.let { id ->
+                                viewModel.deleteGenre(id, genre.name)
+                            }
+                            genreToDelete = null
+                        }
+                    ) {
+                        Text("Xóa", color = MaterialTheme.colorScheme.error)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { genreToDelete = null }) {
+                        Text("Hủy")
+                    }
+                }
+            )
         }
     }
 }
@@ -190,10 +368,10 @@ private fun NeonFab(text: String, onClick: () -> Unit) {
 
 /* ---------- sample data để thấy UI ---------- */
 private fun sampleGenres() = listOf(
-    GenreUi("rock", "ROCK", "Nhạc rock bùng nổ", 50, GenreIcon.Rock),
-    GenreUi("pop", "POP", "Nhạc pop hiện đại", 120, GenreIcon.Pop),
-    GenreUi("jazz", "JAZZ", "Nhạc Jazz ngẫu hứng", 30, GenreIcon.Jazz),
-    GenreUi("hiphop", "HIP HOP", "Văn hóa Hip Hop", 75, GenreIcon.HipHop)
+    GenreUi(id = "rock", apiId = 1, name = "ROCK", description = "Nhạc rock bùng nổ", ageRange = "13+", fileCount = 50, icon = GenreIcon.Rock),
+    GenreUi(id = "pop", apiId = 2, name = "POP", description = "Nhạc pop hiện đại", ageRange = "All Ages", fileCount = 120, icon = GenreIcon.Pop),
+    GenreUi(id = "jazz", apiId = 3, name = "JAZZ", description = "Nhạc Jazz ngẫu hứng", ageRange = "All Ages", fileCount = 30, icon = GenreIcon.Jazz),
+    GenreUi(id = "hiphop", apiId = 4, name = "HIP HOP", description = "Văn hóa Hip Hop", ageRange = "16+", fileCount = 75, icon = GenreIcon.HipHop)
 )
 
 @Composable

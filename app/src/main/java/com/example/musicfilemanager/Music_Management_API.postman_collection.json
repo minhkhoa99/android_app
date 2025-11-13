@@ -1,0 +1,1531 @@
+{
+	"info": {
+		"_postman_id": "music-management-api-2025",
+		"name": "Music Management API",
+		"description": "Collection đầy đủ các API endpoints cho hệ thống quản lý file nhạc",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "music-management"
+	},
+	"item": [
+		{
+			"name": "Music Files",
+			"item": [
+				{
+					"name": "Create Music File",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"fileCode\": \"MF001\",\n  \"fileName\": \"Bài hát mẫu.mp3\",\n  \"genreId\": 1,\n  \"artist\": \"Nghệ sĩ A\",\n  \"album\": \"Album Demo\",\n  \"releaseYear\": 2020,\n  \"description\": \"Mô tả file nhạc\",\n  \"duration\": 240,\n  \"fileSize\": 5242880\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/music-files",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"music-files"
+							]
+						},
+						"description": "Tạo mới một file nhạc trong hệ thống"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"fileCode\": \"MF001\",\n  \"fileName\": \"Bài hát mẫu.mp3\",\n  \"genreId\": 1,\n  \"artist\": \"Nghệ sĩ A\",\n  \"album\": \"Album Demo\",\n  \"releaseYear\": 2020,\n  \"description\": \"Mô tả file nhạc\",\n  \"duration\": 240,\n  \"fileSize\": 5242880\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/api/music-files",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"music-files"
+									]
+								}
+							},
+							"status": "Created",
+							"code": 201,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"id\": 1,\n  \"fileCode\": \"MF001\",\n  \"fileName\": \"Bài hát mẫu.mp3\",\n  \"filePath\": null,\n  \"thumbnailPath\": null,\n  \"fileType\": null,\n  \"genreId\": 1,\n  \"genreName\": \"Pop\",\n  \"downloadLink\": null,\n  \"description\": \"Mô tả file nhạc\",\n  \"artist\": \"Nghệ sĩ A\",\n  \"album\": \"Album Demo\",\n  \"duration\": 240,\n  \"fileSize\": 5242880,\n  \"releaseYear\": 2020,\n  \"createdAt\": \"2025-11-08T10:00:00\",\n  \"updatedAt\": \"2025-11-08T10:00:00\",\n  \"age\": 5\n}"
+						}
+					]
+				},
+				{
+					"name": "Upload Music File",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "/path/to/music.mp3"
+								},
+								{
+									"key": "fileCode",
+									"value": "MF002",
+									"type": "text"
+								},
+								{
+									"key": "fileName",
+									"value": "Song Upload.mp3",
+									"type": "text"
+								},
+								{
+									"key": "genreId",
+									"value": "1",
+									"type": "text"
+								},
+								{
+									"key": "artist",
+									"value": "Artist Name",
+									"type": "text"
+								},
+								{
+									"key": "album",
+									"value": "Album Name",
+									"type": "text"
+								},
+								{
+									"key": "releaseYear",
+									"value": "2023",
+									"type": "text"
+								},
+								{
+									"key": "description",
+									"value": "Description of the music file",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/api/music-files/upload",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"music-files",
+								"upload"
+							]
+						},
+						"description": "Upload file nhạc kèm metadata"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/music-files/upload",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"music-files",
+										"upload"
+									]
+								}
+							},
+							"status": "Created",
+							"code": 201,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"id\": 2,\n  \"fileCode\": \"MF002\",\n  \"fileName\": \"Song Upload.mp3\",\n  \"filePath\": \"/uploads/music/2025/11/song-upload.mp3\",\n  \"thumbnailPath\": null,\n  \"fileType\": \"mp3\",\n  \"genreId\": 1,\n  \"genreName\": \"Pop\",\n  \"downloadLink\": \"http://localhost:3005/uploads/music/2025/11/song-upload.mp3\",\n  \"description\": \"Description of the music file\",\n  \"artist\": \"Artist Name\",\n  \"album\": \"Album Name\",\n  \"duration\": 180,\n  \"fileSize\": 4194304,\n  \"releaseYear\": 2023,\n  \"createdAt\": \"2025-11-08T10:15:00\",\n  \"updatedAt\": \"2025-11-08T10:15:00\",\n  \"age\": 2\n}"
+						}
+					]
+				},
+				{
+					"name": "Upload Thumbnail",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "thumbnail",
+									"type": "file",
+									"src": "/path/to/thumbnail.jpg"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/api/music-files/:id/thumbnail",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"music-files",
+								":id",
+								"thumbnail"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1",
+									"description": "ID của music file"
+								}
+							]
+						},
+						"description": "Upload thumbnail cho file nhạc"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/music-files/1/thumbnail",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"music-files",
+										"1",
+										"thumbnail"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "\"/uploads/thumbnails/2025/11/thumbnail-1.jpg\""
+						}
+					]
+				},
+				{
+					"name": "Update Music File",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"fileCode\": \"MF001\",\n  \"fileName\": \"Bài hát đã cập nhật.mp3\",\n  \"genreId\": 2,\n  \"artist\": \"Nghệ sĩ B\",\n  \"album\": \"Album Updated\",\n  \"releaseYear\": 2021,\n  \"description\": \"Mô tả đã được cập nhật\",\n  \"duration\": 300,\n  \"fileSize\": 6291456\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/music-files/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"music-files",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1",
+									"description": "ID của music file"
+								}
+							]
+						},
+						"description": "Cập nhật thông tin file nhạc"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"fileCode\": \"MF001\",\n  \"fileName\": \"Bài hát đã cập nhật.mp3\",\n  \"genreId\": 2,\n  \"artist\": \"Nghệ sĩ B\",\n  \"album\": \"Album Updated\",\n  \"releaseYear\": 2021,\n  \"description\": \"Mô tả đã được cập nhật\",\n  \"duration\": 300,\n  \"fileSize\": 6291456\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/api/music-files/1",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"music-files",
+										"1"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"id\": 1,\n  \"fileCode\": \"MF001\",\n  \"fileName\": \"Bài hát đã cập nhật.mp3\",\n  \"filePath\": \"/uploads/music/2025/11/song.mp3\",\n  \"thumbnailPath\": \"/uploads/thumbnails/2025/11/thumbnail-1.jpg\",\n  \"fileType\": \"mp3\",\n  \"genreId\": 2,\n  \"genreName\": \"Rock\",\n  \"downloadLink\": \"http://localhost:3005/uploads/music/2025/11/song.mp3\",\n  \"description\": \"Mô tả đã được cập nhật\",\n  \"artist\": \"Nghệ sĩ B\",\n  \"album\": \"Album Updated\",\n  \"duration\": 300,\n  \"fileSize\": 6291456,\n  \"releaseYear\": 2021,\n  \"createdAt\": \"2025-11-08T10:00:00\",\n  \"updatedAt\": \"2025-11-08T11:00:00\",\n  \"age\": 4\n}"
+						}
+					]
+				},
+				{
+					"name": "Delete Music File",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/music-files/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"music-files",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1",
+									"description": "ID của music file"
+								}
+							]
+						},
+						"description": "Xóa file nhạc khỏi hệ thống"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/music-files/1",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"music-files",
+										"1"
+									]
+								}
+							},
+							"status": "No Content",
+							"code": 204,
+							"_postman_previewlanguage": null,
+							"header": [],
+							"cookie": [],
+							"body": null
+						}
+					]
+				},
+				{
+					"name": "Get Music File by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/music-files/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"music-files",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1",
+									"description": "ID của music file"
+								}
+							]
+						},
+						"description": "Lấy thông tin chi tiết file nhạc theo ID"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/music-files/1",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"music-files",
+										"1"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"id\": 1,\n  \"fileCode\": \"MF001\",\n  \"fileName\": \"Bài hát mẫu.mp3\",\n  \"filePath\": \"/uploads/music/2025/11/song.mp3\",\n  \"thumbnailPath\": \"/uploads/thumbnails/2025/11/thumbnail-1.jpg\",\n  \"fileType\": \"mp3\",\n  \"genreId\": 1,\n  \"genreName\": \"Pop\",\n  \"downloadLink\": \"http://localhost:3005/uploads/music/2025/11/song.mp3\",\n  \"description\": \"Mô tả file nhạc\",\n  \"artist\": \"Nghệ sĩ A\",\n  \"album\": \"Album Demo\",\n  \"duration\": 240,\n  \"fileSize\": 5242880,\n  \"releaseYear\": 2020,\n  \"createdAt\": \"2025-11-08T10:00:00\",\n  \"updatedAt\": \"2025-11-08T10:00:00\",\n  \"age\": 5\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Music File by Code",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/music-files/code/:fileCode",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"music-files",
+								"code",
+								":fileCode"
+							],
+							"variable": [
+								{
+									"key": "fileCode",
+									"value": "MF001",
+									"description": "Mã code của file nhạc"
+								}
+							]
+						},
+						"description": "Lấy thông tin file nhạc theo mã code"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/music-files/code/MF001",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"music-files",
+										"code",
+										"MF001"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"id\": 1,\n  \"fileCode\": \"MF001\",\n  \"fileName\": \"Bài hát mẫu.mp3\",\n  \"filePath\": \"/uploads/music/2025/11/song.mp3\",\n  \"thumbnailPath\": \"/uploads/thumbnails/2025/11/thumbnail-1.jpg\",\n  \"fileType\": \"mp3\",\n  \"genreId\": 1,\n  \"genreName\": \"Pop\",\n  \"downloadLink\": \"http://localhost:3005/uploads/music/2025/11/song.mp3\",\n  \"description\": \"Mô tả file nhạc\",\n  \"artist\": \"Nghệ sĩ A\",\n  \"album\": \"Album Demo\",\n  \"duration\": 240,\n  \"fileSize\": 5242880,\n  \"releaseYear\": 2020,\n  \"createdAt\": \"2025-11-08T10:00:00\",\n  \"updatedAt\": \"2025-11-08T10:00:00\",\n  \"age\": 5\n}"
+						}
+					]
+				},
+				{
+					"name": "Get All Music Files (Paginated)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/music-files?page=0&size=20&sort=createdAt,desc",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"music-files"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "0",
+									"description": "Số trang (bắt đầu từ 0)"
+								},
+								{
+									"key": "size",
+									"value": "20",
+									"description": "Số lượng bản ghi mỗi trang"
+								},
+								{
+									"key": "sort",
+									"value": "createdAt,desc",
+									"description": "Sắp xếp theo trường (asc/desc)"
+								}
+							]
+						},
+						"description": "Lấy danh sách tất cả file nhạc có phân trang"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/music-files?page=0&size=20",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"music-files"
+									],
+									"query": [
+										{
+											"key": "page",
+											"value": "0"
+										},
+										{
+											"key": "size",
+											"value": "20"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"content\": [\n    {\n      \"id\": 1,\n      \"fileCode\": \"MF001\",\n      \"fileName\": \"Bài hát mẫu.mp3\",\n      \"filePath\": \"/uploads/music/2025/11/song.mp3\",\n      \"thumbnailPath\": \"/uploads/thumbnails/2025/11/thumbnail-1.jpg\",\n      \"fileType\": \"mp3\",\n      \"genreId\": 1,\n      \"genreName\": \"Pop\",\n      \"downloadLink\": \"http://localhost:3005/uploads/music/2025/11/song.mp3\",\n      \"description\": \"Mô tả file nhạc\",\n      \"artist\": \"Nghệ sĩ A\",\n      \"album\": \"Album Demo\",\n      \"duration\": 240,\n      \"fileSize\": 5242880,\n      \"releaseYear\": 2020,\n      \"createdAt\": \"2025-11-08T10:00:00\",\n      \"updatedAt\": \"2025-11-08T10:00:00\",\n      \"age\": 5\n    }\n  ],\n  \"pageable\": {\n    \"sort\": {\n      \"sorted\": true,\n      \"unsorted\": false,\n      \"empty\": false\n    },\n    \"pageNumber\": 0,\n    \"pageSize\": 20,\n    \"offset\": 0,\n    \"paged\": true,\n    \"unpaged\": false\n  },\n  \"totalPages\": 1,\n  \"totalElements\": 1,\n  \"last\": true,\n  \"first\": true,\n  \"numberOfElements\": 1,\n  \"size\": 20,\n  \"number\": 0,\n  \"sort\": {\n    \"sorted\": true,\n    \"unsorted\": false,\n    \"empty\": false\n  },\n  \"empty\": false\n}"
+						}
+					]
+				},
+				{
+					"name": "Search Music Files",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/music-files/search?keyword=pop&page=0&size=20",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"music-files",
+								"search"
+							],
+							"query": [
+								{
+									"key": "keyword",
+									"value": "pop",
+									"description": "Từ khóa tìm kiếm"
+								},
+								{
+									"key": "page",
+									"value": "0",
+									"description": "Số trang"
+								},
+								{
+									"key": "size",
+									"value": "20",
+									"description": "Số lượng bản ghi"
+								}
+							]
+						},
+						"description": "Tìm kiếm file nhạc theo từ khóa (tìm trong tên, nghệ sĩ, album)"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/music-files/search?keyword=pop&page=0&size=20",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"music-files",
+										"search"
+									],
+									"query": [
+										{
+											"key": "keyword",
+											"value": "pop"
+										},
+										{
+											"key": "page",
+											"value": "0"
+										},
+										{
+											"key": "size",
+											"value": "20"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"content\": [\n    {\n      \"id\": 1,\n      \"fileCode\": \"MF001\",\n      \"fileName\": \"Pop Music.mp3\",\n      \"genreName\": \"Pop\",\n      \"artist\": \"Artist A\",\n      \"releaseYear\": 2020\n    }\n  ],\n  \"totalElements\": 1,\n  \"totalPages\": 1\n}"
+						}
+					]
+				},
+				{
+					"name": "Filter by Genre",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/music-files/filter/genre/:genreId?page=0&size=20",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"music-files",
+								"filter",
+								"genre",
+								":genreId"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "20"
+								}
+							],
+							"variable": [
+								{
+									"key": "genreId",
+									"value": "1",
+									"description": "ID của thể loại"
+								}
+							]
+						},
+						"description": "Lọc file nhạc theo thể loại"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/music-files/filter/genre/1?page=0&size=20",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"music-files",
+										"filter",
+										"genre",
+										"1"
+									],
+									"query": [
+										{
+											"key": "page",
+											"value": "0"
+										},
+										{
+											"key": "size",
+											"value": "20"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"content\": [\n    {\n      \"id\": 1,\n      \"fileCode\": \"MF001\",\n      \"fileName\": \"Pop Song.mp3\",\n      \"genreId\": 1,\n      \"genreName\": \"Pop\"\n    }\n  ],\n  \"totalElements\": 1\n}"
+						}
+					]
+				},
+				{
+					"name": "Filter by File Type",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/music-files/filter/type/:fileType?page=0&size=20",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"music-files",
+								"filter",
+								"type",
+								":fileType"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "20"
+								}
+							],
+							"variable": [
+								{
+									"key": "fileType",
+									"value": "mp3",
+									"description": "Loại file (mp3, wav, flac, etc.)"
+								}
+							]
+						},
+						"description": "Lọc file nhạc theo loại file"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/music-files/filter/type/mp3",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"music-files",
+										"filter",
+										"type",
+										"mp3"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"content\": [\n    {\n      \"id\": 1,\n      \"fileName\": \"Song.mp3\",\n      \"fileType\": \"mp3\"\n    }\n  ]\n}"
+						}
+					]
+				},
+				{
+					"name": "Filter by Artist",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/music-files/filter/artist?artist=Artist Name&page=0&size=20",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"music-files",
+								"filter",
+								"artist"
+							],
+							"query": [
+								{
+									"key": "artist",
+									"value": "Artist Name",
+									"description": "Tên nghệ sĩ"
+								},
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "20"
+								}
+							]
+						},
+						"description": "Lọc file nhạc theo nghệ sĩ"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/music-files/filter/artist?artist=Artist Name",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"music-files",
+										"filter",
+										"artist"
+									],
+									"query": [
+										{
+											"key": "artist",
+											"value": "Artist Name"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"content\": [\n    {\n      \"id\": 1,\n      \"fileName\": \"Song.mp3\",\n      \"artist\": \"Artist Name\"\n    }\n  ]\n}"
+						}
+					]
+				},
+				{
+					"name": "Filter by Release Year",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/music-files/filter/year/:year?page=0&size=20",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"music-files",
+								"filter",
+								"year",
+								":year"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "20"
+								}
+							],
+							"variable": [
+								{
+									"key": "year",
+									"value": "2020",
+									"description": "Năm phát hành"
+								}
+							]
+						},
+						"description": "Lọc file nhạc theo năm phát hành"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/music-files/filter/year/2020",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"music-files",
+										"filter",
+										"year",
+										"2020"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"content\": [\n    {\n      \"id\": 1,\n      \"fileName\": \"Song 2020.mp3\",\n      \"releaseYear\": 2020\n    }\n  ]\n}"
+						}
+					]
+				}
+			],
+			"description": "APIs quản lý file nhạc"
+		},
+		{
+			"name": "Music Genres",
+			"item": [
+				{
+					"name": "Create Genre",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"genreCode\": \"POP\",\n  \"genreName\": \"Pop Music\",\n  \"description\": \"Nhạc pop hiện đại\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/genres",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"genres"
+							]
+						},
+						"description": "Tạo mới thể loại nhạc"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"genreCode\": \"POP\",\n  \"genreName\": \"Pop Music\",\n  \"description\": \"Nhạc pop hiện đại\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/api/genres",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"genres"
+									]
+								}
+							},
+							"status": "Created",
+							"code": 201,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"id\": 1,\n  \"genreCode\": \"POP\",\n  \"genreName\": \"Pop Music\",\n  \"description\": \"Nhạc pop hiện đại\",\n  \"createdAt\": \"2025-11-08T10:00:00\",\n  \"updatedAt\": \"2025-11-08T10:00:00\",\n  \"totalFiles\": 0\n}"
+						}
+					]
+				},
+				{
+					"name": "Update Genre",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"genreCode\": \"POP\",\n  \"genreName\": \"Pop Music Updated\",\n  \"description\": \"Nhạc pop hiện đại đã cập nhật\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/genres/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"genres",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1",
+									"description": "ID của thể loại"
+								}
+							]
+						},
+						"description": "Cập nhật thông tin thể loại nhạc"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"genreCode\": \"POP\",\n  \"genreName\": \"Pop Music Updated\",\n  \"description\": \"Nhạc pop hiện đại đã cập nhật\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/api/genres/1",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"genres",
+										"1"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"id\": 1,\n  \"genreCode\": \"POP\",\n  \"genreName\": \"Pop Music Updated\",\n  \"description\": \"Nhạc pop hiện đại đã cập nhật\",\n  \"createdAt\": \"2025-11-08T10:00:00\",\n  \"updatedAt\": \"2025-11-08T11:00:00\",\n  \"totalFiles\": 5\n}"
+						}
+					]
+				},
+				{
+					"name": "Delete Genre",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/genres/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"genres",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1",
+									"description": "ID của thể loại"
+								}
+							]
+						},
+						"description": "Xóa thể loại nhạc"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/genres/1",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"genres",
+										"1"
+									]
+								}
+							},
+							"status": "No Content",
+							"code": 204,
+							"_postman_previewlanguage": null,
+							"header": [],
+							"cookie": [],
+							"body": null
+						}
+					]
+				},
+				{
+					"name": "Get Genre by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/genres/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"genres",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1",
+									"description": "ID của thể loại"
+								}
+							]
+						},
+						"description": "Lấy thông tin chi tiết thể loại theo ID"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/genres/1",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"genres",
+										"1"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"id\": 1,\n  \"genreCode\": \"POP\",\n  \"genreName\": \"Pop Music\",\n  \"description\": \"Nhạc pop hiện đại\",\n  \"createdAt\": \"2025-11-08T10:00:00\",\n  \"updatedAt\": \"2025-11-08T10:00:00\",\n  \"totalFiles\": 10\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Genre by Code",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/genres/code/:genreCode",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"genres",
+								"code",
+								":genreCode"
+							],
+							"variable": [
+								{
+									"key": "genreCode",
+									"value": "POP",
+									"description": "Mã code của thể loại"
+								}
+							]
+						},
+						"description": "Lấy thông tin thể loại theo mã code"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/genres/code/POP",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"genres",
+										"code",
+										"POP"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"id\": 1,\n  \"genreCode\": \"POP\",\n  \"genreName\": \"Pop Music\",\n  \"description\": \"Nhạc pop hiện đại\",\n  \"createdAt\": \"2025-11-08T10:00:00\",\n  \"updatedAt\": \"2025-11-08T10:00:00\",\n  \"totalFiles\": 10\n}"
+						}
+					]
+				},
+				{
+					"name": "Get All Genres",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/genres",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"genres"
+							]
+						},
+						"description": "Lấy danh sách tất cả thể loại nhạc"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/genres",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"genres"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "[\n  {\n    \"id\": 1,\n    \"genreCode\": \"POP\",\n    \"genreName\": \"Pop Music\",\n    \"description\": \"Nhạc pop hiện đại\",\n    \"createdAt\": \"2025-11-08T10:00:00\",\n    \"updatedAt\": \"2025-11-08T10:00:00\",\n    \"totalFiles\": 10\n  },\n  {\n    \"id\": 2,\n    \"genreCode\": \"ROCK\",\n    \"genreName\": \"Rock Music\",\n    \"description\": \"Nhạc rock\",\n    \"createdAt\": \"2025-11-08T10:00:00\",\n    \"updatedAt\": \"2025-11-08T10:00:00\",\n    \"totalFiles\": 5\n  }\n]"
+						}
+					]
+				}
+			],
+			"description": "APIs quản lý thể loại nhạc"
+		},
+		{
+			"name": "Reports",
+			"item": [
+				{
+					"name": "Get Old Music Files",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/reports/old-music?minAge=40",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"reports",
+								"old-music"
+							],
+							"query": [
+								{
+									"key": "minAge",
+									"value": "40",
+									"description": "Số năm tối thiểu (mặc định 40 năm)"
+								}
+							]
+						},
+						"description": "Lấy danh sách file nhạc cũ (mặc định > 40 năm)"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/reports/old-music?minAge=40",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"reports",
+										"old-music"
+									],
+									"query": [
+										{
+											"key": "minAge",
+											"value": "40"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "[\n  {\n    \"id\": 1,\n    \"fileCode\": \"MF001\",\n    \"fileName\": \"Old Song.mp3\",\n    \"releaseYear\": 1980,\n    \"age\": 45,\n    \"artist\": \"Old Artist\",\n    \"genreName\": \"Classic\"\n  },\n  {\n    \"id\": 2,\n    \"fileCode\": \"MF002\",\n    \"fileName\": \"Vintage Music.mp3\",\n    \"releaseYear\": 1975,\n    \"age\": 50,\n    \"artist\": \"Vintage Artist\",\n    \"genreName\": \"Jazz\"\n  }\n]"
+						}
+					]
+				},
+				{
+					"name": "Get Report by Genre",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/reports/by-genre",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"reports",
+								"by-genre"
+							]
+						},
+						"description": "Thống kê số lượng file nhạc theo thể loại"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/reports/by-genre",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"reports",
+										"by-genre"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "[\n  {\n    \"genreName\": \"Pop\",\n    \"fileCount\": 25,\n    \"totalSize\": 134217728\n  },\n  {\n    \"genreName\": \"Rock\",\n    \"fileCount\": 15,\n    \"totalSize\": 83886080\n  },\n  {\n    \"genreName\": \"Jazz\",\n    \"fileCount\": 10,\n    \"totalSize\": 52428800\n  }\n]"
+						}
+					]
+				},
+				{
+					"name": "Get Report by Year",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/reports/by-year",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"reports",
+								"by-year"
+							]
+						},
+						"description": "Thống kê số lượng file nhạc theo năm phát hành"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/reports/by-year",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"reports",
+										"by-year"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "[\n  {\n    \"year\": 2023,\n    \"fileCountByYear\": 45\n  },\n  {\n    \"year\": 2022,\n    \"fileCountByYear\": 38\n  },\n  {\n    \"year\": 2021,\n    \"fileCountByYear\": 32\n  },\n  {\n    \"year\": 2020,\n    \"fileCountByYear\": 28\n  }\n]"
+						}
+					]
+				},
+				{
+					"name": "Get Storage Report",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/reports/storage",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"reports",
+								"storage"
+							]
+						},
+						"description": "Thống kê tổng quan dung lượng lưu trữ"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/reports/storage",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"reports",
+										"storage"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"totalFiles\": 150,\n  \"totalStorageSize\": 1610612736,\n  \"formattedStorageSize\": \"1.5 GB\"\n}"
+						}
+					]
+				}
+			],
+			"description": "APIs báo cáo và thống kê"
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:3005",
+			"type": "string"
+		}
+	]
+}

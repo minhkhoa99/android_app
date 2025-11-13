@@ -8,6 +8,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.musicfilemanager.navigation.Routes
 import com.example.musicfilemanager.ui.MainScreen
 import com.example.musicfilemanager.ui.MusicDetailScreen
@@ -16,8 +17,10 @@ import com.example.musicfilemanager.ui.OldMusicScreen
 import com.example.musicfilemanager.ui.genres.AddGenreScreen
 import com.example.musicfilemanager.ui.genres.GenreListScreen
 import com.example.musicfilemanager.ui.genres.GenreUi
+import com.example.musicfilemanager.ui.genres.GenreIcon
 import com.example.musicfilemanager.ui.stats.StatsScreen
 import com.example.musicfilemanager.ui.theme.AppTheme
+import com.example.musicfilemanager.viewmodel.GenreViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -84,23 +87,34 @@ class MainActivity : ComponentActivity() {
                         route = Routes.EditGenre,
                         arguments = listOf(navArgument("id"){ defaultValue = "" })
                     ) { backStack ->
+                        val genreViewModel: GenreViewModel = viewModel()
                         val id = backStack.arguments?.getString("id") ?: ""
-                        // TODO: Lấy thông tin genre từ DB theo id
-                        // Hiện tại dùng sample data mapping
-                        val genreToEdit = when (id) {
-                            "rock" -> GenreUi(id = "rock", name = "ROCK", description = "Nhạc rock bùng nổ", fileCount = 50)
-                            "pop" -> GenreUi(id = "pop", name = "POP", description = "Nhạc pop hiện đại", fileCount = 120)
-                            "jazz" -> GenreUi(id = "jazz", name = "JAZZ", description = "Nhạc Jazz ngẫu hứng", fileCount = 30)
-                            "hiphop" -> GenreUi(id = "hiphop", name = "HIP HOP", description = "Văn hóa Hip Hop", fileCount = 75)
-                            else -> GenreUi(id = id, name = "Unknown", description = "Thể loại không xác định", fileCount = 0)
+
+                        // Lấy thông tin genre từ ViewModel với API ID
+                        val genreWithId = genreViewModel.getGenreWithIdByCode(id)
+                        val genreToEdit = genreWithId?.let {
+                            GenreUi(
+                                id = it.genre.id,
+                                apiId = it.apiId,
+                                name = it.genre.name,
+                                description = it.description ?: "Thể loại ${it.genre.name}",
+                                ageRange = it.ageRange,
+                                fileCount = it.totalFiles,
+                                icon = when (it.genre.id.lowercase()) {
+                                    "rock" -> GenreIcon.Rock
+                                    "pop" -> GenreIcon.Pop
+                                    "jazz" -> GenreIcon.Jazz
+                                    "hiphop", "hip hop" -> GenreIcon.HipHop
+                                    else -> GenreIcon.Pop
+                                }
+                            )
                         }
+
                         AddGenreScreen(
                             genreToEdit = genreToEdit,
+                            viewModel = genreViewModel,
                             onBack = { nav.popBackStack() },
-                            onSaved = {
-                                // TODO: Lưu cập nhật vào DB
-                                nav.popBackStack()
-                            }
+                            onSaved = { nav.popBackStack() }
                         )
                     }
                     composable(Routes.Stats) {

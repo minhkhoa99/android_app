@@ -1,0 +1,45 @@
+{
+  "genres": [
+    {
+      "id": 1,
+      "genreCode": "POP",
+      "genreName": "Pop Music",
+      "description": "Nhạc pop hiện đại, phổ biến",
+      "ageRange": "All Ages",
+      "createdAt": "2025-11-13T10:00:00",
+      "updatedAt": "2025-11-13T10:00:00",
+      "totalFiles": 10
+    },
+    {
+      "id": 2,
+      "genreCode": "ROCK",
+      "genreName": "Rock Music",
+      "description": "Nhạc rock bùng nổ, mạnh mẽ",
+      "ageRange": "13+",
+      "createdAt": "2025-11-13T10:00:00",
+      "updatedAt": "2025-11-13T10:00:00",
+      "totalFiles": 5
+    },
+    {
+      "id": 3,
+      "genreCode": "JAZZ",
+      "genreName": "Jazz",
+      "description": "Nhạc jazz êm dịu, sâu lắng",
+      "ageRange": "All Ages",
+      "createdAt": "2025-11-13T10:00:00",
+      "updatedAt": "2025-11-13T10:00:00",
+      "totalFiles": 3
+    },
+    {
+      "id": 4,
+      "genreCode": "HIPHOP",
+      "genreName": "Hip Hop",
+      "description": "Nhạc hip hop sôi động",
+      "ageRange": "16+",
+      "createdAt": "2025-11-13T10:00:00",
+      "updatedAt": "2025-11-13T10:00:00",
+      "totalFiles": 8
+    }
+  ]
+}
+
