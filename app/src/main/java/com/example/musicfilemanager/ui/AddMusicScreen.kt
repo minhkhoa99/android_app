@@ -32,6 +32,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -44,6 +45,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.musicfilemanager.data.GenreRepository
 import com.example.musicfilemanager.model.Genre
 import com.example.musicfilemanager.model.sampleMusics
 import com.example.musicfilemanager.ui.theme.Gray800
@@ -59,12 +61,20 @@ fun AddMusicScreen(
     onBack: () -> Unit,
     onSaved: () -> Unit = {}
 ) {
+    // Lấy danh sách genres từ repository (không bao gồm "Tất cả")
+    val availableGenres by GenreRepository.genres.collectAsState()
+    val genresForMusic = remember(availableGenres) {
+        availableGenres.filter { it.id != "all" }
+    }
+
     // Lấy dữ liệu hiện có nếu đang ở chế độ chỉnh sửa
     val existingMusic = remember(musicId) {
         musicId?.let { id -> sampleMusics.find { it.id == id } }
     }
 
-    val isEditMode = existingMusic != null
+    // isEditMode dựa vào musicId, không phải existingMusic
+    // Vì có thể musicId hợp lệ nhưng không có trong sampleMusics
+    val isEditMode = musicId != null
 
     var fileUri by remember { mutableStateOf<Uri?>(null) }
     var title by remember { mutableStateOf(existingMusic?.title ?: "") }
@@ -73,7 +83,7 @@ fun AddMusicScreen(
     var year by remember { mutableStateOf("2020") }
     var duration by remember { mutableStateOf(existingMusic?.duration ?: "") }
     var size by remember { mutableStateOf("5.0 MB") }
-    var genre by remember { mutableStateOf(existingMusic?.genre ?: Genre.Pop) }
+    var selectedGenreId by remember { mutableStateOf(existingMusic?.genreId ?: "pop") }
     var expanded by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
 
@@ -176,16 +186,16 @@ fun AddMusicScreen(
                         .fillMaxWidth()
                         .padding(vertical = 6.dp),
                     readOnly = true,
-                    value = genre.name,
+                    value = genresForMusic.find { it.id == selectedGenreId }?.name ?: "Pop",
                     onValueChange = {},
                     label = { Text("Thể loại") },
                     trailingIcon = { Icon(Icons.Outlined.KeyboardArrowDown, null) }
                 )
                 ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                    Genre.values().forEach { g ->
+                    genresForMusic.forEach { g ->
                         DropdownMenuItem(
                             text = { Text(g.name) },
-                            onClick = { genre = g; expanded = false }
+                            onClick = { selectedGenreId = g.id; expanded = false }
                         )
                     }
                 }

@@ -13,6 +13,8 @@ import androidx.compose.material.icons.outlined.*
 import androidx.compose.material.icons.outlined.Category
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -21,6 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.musicfilemanager.data.GenreRepository
 import com.example.musicfilemanager.model.Genre
 import com.example.musicfilemanager.model.Music
 import com.example.musicfilemanager.model.sampleMusics
@@ -48,11 +51,12 @@ fun MainScreen(
     var query by remember { mutableStateOf("") }
     var selected by remember { mutableStateOf(Genre.All) }
 
-    val chips = listOf(Genre.All, Genre.Pop, Genre.Rock, Genre.Jazz)
+    // Lấy danh sách genres từ repository
+    val availableGenres by GenreRepository.genres.collectAsState()
 
     val data = remember(query, selected) {
         sampleMusics
-            .filter { selected == Genre.All || it.genre == selected }
+            .filter { selected.id == "all" || it.genreId == selected.id }
             .filter { it.title.contains(query, ignoreCase = true) || it.artist.contains(query, true) }
     }
 
@@ -77,13 +81,14 @@ fun MainScreen(
                 .fillMaxSize()
                 .padding(inner)
                 .background(Gray900)
+                .windowInsetsPadding(WindowInsets.statusBars)
                 .padding(horizontal = 16.dp)
         ) {
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(16.dp))
             SearchBar(query) { query = it }
             Spacer(Modifier.height(16.dp))
             FilterChips(
-                items = chips,
+                items = availableGenres,
                 selected = selected,
                 onSelected = { selected = it }
             )
@@ -150,12 +155,7 @@ private fun FilterChips(
                     .padding(horizontal = 14.dp, vertical = 8.dp)
             ) {
                 Text(
-                    text = when (g) {
-                        Genre.All -> "Tất cả"
-                        Genre.Pop -> "Pop"
-                        Genre.Rock -> "Rock"
-                        Genre.Jazz -> "Jazz"
-                    },
+                    text = g.name,
                     color = txt,
                     style = MaterialTheme.typography.labelLarge
                 )
@@ -194,6 +194,12 @@ private fun MusicCard(
     onEditClick: () -> Unit = {},
     onDeleteClick: () -> Unit = {}
 ) {
+    // Lấy genre name từ repository
+    val genres by GenreRepository.genres.collectAsState()
+    val genreName = remember(music.genreId, genres) {
+        genres.find { it.id == music.genreId }?.name ?: "Unknown"
+    }
+
     Surface(
         color = Gray800,
         shape = RoundedCornerShape(16.dp),
@@ -250,7 +256,7 @@ private fun MusicCard(
                     .background(TagBg)
                     .padding(horizontal = 10.dp, vertical = 6.dp)
             ) {
-                Text(music.genre.name, color = TextSecondary, style = MaterialTheme.typography.labelSmall)
+                Text(genreName, color = TextSecondary, style = MaterialTheme.typography.labelSmall)
             }
 
             Spacer(Modifier.width(8.dp))
@@ -295,7 +301,7 @@ private fun BottomNavBar(current: String, onClick: (String) -> Unit) {
             "home" to Icons.Outlined.Home,
             "library" to Icons.Outlined.MenuBook,
             "genre" to Icons.Outlined.Category,
-            "settings" to Icons.Outlined.Settings
+            "oldmusic" to Icons.Outlined.MusicNote // Đổi từ settings → oldmusic
         )
         items.forEach { (id, icon) ->
             NavigationBarItem(
@@ -316,8 +322,9 @@ private fun BottomNavBar(current: String, onClick: (String) -> Unit) {
                         when (id) {
                             "home" -> "Trang chủ"
                             "library" -> "Thư viện"
-                            "genre" -> "thể loại"
-                            else -> "Cài đặt"
+                            "genre" -> "Thể loại"
+                            "oldmusic" -> "Nhạc cũ"
+                            else -> "Khác"
                         }
                     )
                 },

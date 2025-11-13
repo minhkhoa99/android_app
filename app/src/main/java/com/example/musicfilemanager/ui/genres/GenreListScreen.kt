@@ -21,14 +21,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.musicfilemanager.ui.theme.*
 
-data class GenreUi(
-    val id: String,
-    val name: String,
-    val description: String,
-    val fileCount: Int,
-    val icon: GenreIcon
-)
-enum class GenreIcon { Rock, Pop, Jazz, HipHop }
 
 @Preview
 @Composable
@@ -43,29 +35,38 @@ fun GenreListScreen(
 ) {
     Scaffold(
         topBar = {
-            Surface(
-                color = Color(0xFF252C3B),
-                shape = RoundedCornerShape(24.dp),
-                tonalElevation = 2.dp,
-                modifier = Modifier
+            @Composable
+            fun TopBarWithStatusBarPadding() {
+                Box(modifier = Modifier
                     .fillMaxWidth()
-                    .padding(start = 12.dp, end = 12.dp, top = 8.dp)
-                    .height(44.dp)
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(horizontal = 8.dp)
+                    .windowInsetsPadding(WindowInsets.statusBars)
                 ) {
-                    IconButton(onClick = onBack) { Icon(Icons.Outlined.Menu, null, tint = TextPrimary) }
-                    Text(
-                        "Quản Lý Thể Loại",
-                        color = TextPrimary,
-                        style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.weight(1f)
-                    )
-                    Spacer(Modifier.width(40.dp))
+                    Surface(
+                        color = Color(0xFF252C3B),
+                        shape = RoundedCornerShape(24.dp),
+                        tonalElevation = 2.dp,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 12.dp, end = 12.dp, top = 12.dp)
+                            .height(44.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(horizontal = 8.dp)
+                        ) {
+                            IconButton(onClick = onBack) { Icon(Icons.Outlined.Menu, null, tint = TextPrimary) }
+                            Text(
+                                "Quản Lý Thể Loại",
+                                color = TextPrimary,
+                                style = MaterialTheme.typography.titleMedium,
+                                modifier = Modifier.weight(1f)
+                            )
+                            Spacer(Modifier.width(40.dp))
+                        }
+                    }
                 }
             }
+            TopBarWithStatusBarPadding()
         },
         floatingActionButton = { NeonFab(text = "Thêm Mới", onClick = onAdd) },
         containerColor = Gray900,
@@ -78,7 +79,7 @@ fun GenreListScreen(
     ) { inner ->
         LazyColumn(
             contentPadding = PaddingValues(
-                top = inner.calculateTopPadding() + 12.dp,
+                top = inner.calculateTopPadding() + 16.dp,
                 bottom = inner.calculateBottomPadding() + 100.dp,
                 start = 16.dp, end = 16.dp
             ),
@@ -202,7 +203,7 @@ private fun BottomNavBar(current: String, onClick: (String) -> Unit) {
             "home" to Icons.Outlined.Home,
             "library" to Icons.Outlined.MenuBook,
             "genre" to Icons.Outlined.Category,
-            "settings" to Icons.Outlined.Settings
+            "oldmusic" to Icons.Outlined.MusicNote
         )
         items.forEach { (id, icon) ->
             NavigationBarItem(
@@ -223,8 +224,9 @@ private fun BottomNavBar(current: String, onClick: (String) -> Unit) {
                         when (id) {
                             "home" -> "Trang chủ"
                             "library" -> "Thư viện"
-                            "genre" -> "thể loại"
-                            else -> "Cài đặt"
+                            "genre" -> "Thể loại"
+                            "oldmusic" -> "Nhạc cũ"
+                            else -> "Khác"
                         }
                     )
                 },

@@ -19,20 +19,26 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.musicfilemanager.data.GenreRepository
 import com.example.musicfilemanager.ui.theme.*
 
-@Preview
 @Composable
 fun AddGenreScreen(
-    onBack: () -> Unit,
-    onSaved: () -> Unit
+    genreToEdit: GenreUi? = null,
+    onBack: () -> Unit = {},
+    onSaved: () -> Unit = {}
 ) {
-    var code by remember { mutableStateOf("") }
-    var name by remember { mutableStateOf("") }
-    var desc by remember { mutableStateOf("") }
+    var code by remember { mutableStateOf(genreToEdit?.id ?: "") }
+    var name by remember { mutableStateOf(genreToEdit?.name ?: "") }
+    var desc by remember { mutableStateOf(genreToEdit?.description ?: "") }
 
     Scaffold(
-        topBar = { PillTopBar(title = "Thêm Thể Loại Mới", onBack = onBack) },
+        topBar = {
+            PillTopBar(
+                title = if (genreToEdit == null) "Thêm Thể Loại Mới" else "Chỉnh Sửa Thể Loại",
+                onBack = onBack
+            )
+        },
         containerColor = Gray900
     ) { inner ->
         Column(
@@ -41,9 +47,9 @@ fun AddGenreScreen(
                 .fillMaxSize()
                 .padding(horizontal = 16.dp)
         ) {
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(16.dp))
 
-            // Icon GENRE “neon” (giả lập)
+            // Icon GENRE "neon" (giả lập)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -79,7 +85,7 @@ fun AddGenreScreen(
 
             Spacer(Modifier.height(10.dp))
             Text(
-                "Tạo hoặc cập nhật thông tin thể loại",
+                if (genreToEdit == null) "Tạo thể loại mới cho bộ sưu tập" else "Cập nhật thông tin thể loại",
                 color = TextSecondary,
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.align(Alignment.CenterHorizontally)
@@ -116,10 +122,30 @@ fun AddGenreScreen(
             Spacer(Modifier.weight(1f))
 
             GradientButton(
-                text = "Lưu Thể Loại",
+                text = if (genreToEdit == null) "Lưu Thể Loại" else "Cập Nhật",
                 modifier = Modifier.fillMaxWidth()
             ) {
-                // TODO: validate + lưu DB
+                // Validate
+                if (code.isBlank() || name.isBlank()) {
+                    // TODO: Hiển thị error message
+                    return@GradientButton
+                }
+
+                // Lưu hoặc cập nhật vào repository
+                if (genreToEdit == null) {
+                    // Thêm mới
+                    GenreRepository.addGenre(
+                        id = code.lowercase().replace(" ", "_"),
+                        name = name
+                    )
+                } else {
+                    // Cập nhật
+                    GenreRepository.updateGenre(
+                        id = genreToEdit.id,
+                        newName = name
+                    )
+                }
+
                 onSaved()
             }
 
@@ -132,31 +158,36 @@ fun AddGenreScreen(
 
 @Composable
 private fun PillTopBar(title: String, onBack: () -> Unit) {
-    // Thanh tiêu đề “viên thuốc”
-    Surface(
-        color = Color(0xFF252C3B),
-        shape = RoundedCornerShape(24.dp),
-        tonalElevation = 2.dp,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(start = 12.dp, end = 12.dp, top = 8.dp)
-            .height(44.dp)
+    Box(modifier = Modifier
+        .fillMaxWidth()
+        .windowInsetsPadding(WindowInsets.statusBars)
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(horizontal = 4.dp)
+        // Thanh tiêu đề "viên thuốc"
+        Surface(
+            color = Color(0xFF252C3B),
+            shape = RoundedCornerShape(24.dp),
+            tonalElevation = 2.dp,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 12.dp, end = 12.dp, top = 12.dp)
+                .height(44.dp)
         ) {
-            IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Outlined.ArrowBack, null, tint = TextPrimary)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(horizontal = 4.dp)
+            ) {
+                IconButton(onClick = onBack) {
+                    Icon(Icons.AutoMirrored.Outlined.ArrowBack, null, tint = TextPrimary)
+                }
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    title,
+                    color = TextPrimary,
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.weight(1f)
+                )
+                Spacer(Modifier.width(40.dp)) // giữ cân đối bên phải
             }
-            Spacer(Modifier.width(8.dp))
-            Text(
-                title,
-                color = TextPrimary,
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.weight(1f)
-            )
-            Spacer(Modifier.width(40.dp)) // giữ cân đối bên phải
         }
     }
 }
@@ -220,3 +251,29 @@ private fun GradientButton(
         }
     }
 }
+
+@Preview
+@Composable
+private fun PreviewAddGenreScreen() {
+    AddGenreScreen(
+        genreToEdit = null,
+        onBack = {},
+        onSaved = {}
+    )
+}
+
+@Preview
+@Composable
+private fun PreviewEditGenreScreen() {
+    AddGenreScreen(
+        genreToEdit = GenreUi(
+            id = "ROCK",
+            name = "Rock",
+            description = "Nhạc rock bùng nổ",
+            fileCount = 50
+        ),
+        onBack = {},
+        onSaved = {}
+    )
+}
+

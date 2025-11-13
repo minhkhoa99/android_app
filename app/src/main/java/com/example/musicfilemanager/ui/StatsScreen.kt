@@ -183,22 +183,27 @@ private fun OldSongsCard(items: List<OldSong>) {
 
 @Composable
 private fun PillTopBar(title: String, onBack: () -> Unit) {
-    Surface(
-        color = Color(0xFF252C3B),
-        shape = RoundedCornerShape(24.dp),
-        tonalElevation = 2.dp,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(start = 12.dp, end = 12.dp, top = 8.dp)
-            .height(44.dp)
+    Box(modifier = Modifier
+        .fillMaxWidth()
+        .windowInsetsPadding(WindowInsets.statusBars)
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Outlined.ArrowBack, null, tint = TextPrimary)
+        Surface(
+            color = Color(0xFF252C3B),
+            shape = RoundedCornerShape(24.dp),
+            tonalElevation = 2.dp,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 12.dp, end = 12.dp, top = 12.dp)
+                .height(44.dp)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = onBack) {
+                    Icon(Icons.AutoMirrored.Outlined.ArrowBack, null, tint = TextPrimary)
+                }
+                Text(title, modifier = Modifier.weight(1f), color = TextPrimary,
+                    style = MaterialTheme.typography.titleMedium)
+                Spacer(Modifier.width(40.dp))
             }
-            Text(title, modifier = Modifier.weight(1f), color = TextPrimary,
-                style = MaterialTheme.typography.titleMedium)
-            Spacer(Modifier.width(40.dp))
         }
     }
 }
@@ -219,7 +224,10 @@ private fun SectionCard(content: @Composable ColumnScope.() -> Unit) {
 private fun Legend(color: Color, text: String) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Box(
-            Modifier.size(12.dp).clip(CircleShape).background(color)
+            Modifier
+                .size(12.dp)
+                .clip(CircleShape)
+                .background(color)
         )
         Spacer(Modifier.width(8.dp))
         Text(text, color = TextSecondary, style = MaterialTheme.typography.bodySmall)
@@ -380,7 +388,7 @@ private fun BottomNavBar(current: String, onClick: (String) -> Unit) {
             "home" to Icons.Outlined.Home,
             "library" to Icons.Outlined.MenuBook,
             "genre" to Icons.Outlined.Category,
-            "settings" to Icons.Outlined.Settings
+            "oldmusic" to Icons.Outlined.MusicNote
         )
         items.forEach { (id, icon) ->
             NavigationBarItem(
@@ -401,8 +409,9 @@ private fun BottomNavBar(current: String, onClick: (String) -> Unit) {
                         when (id) {
                             "home" -> "Trang chủ"
                             "library" -> "Thư viện"
-                            "genre" -> "thể loại"
-                            else -> "Cài đặt"
+                            "genre" -> "Thể loại"
+                            "oldmusic" -> "Nhạc cũ"
+                            else -> "Khác"
                         }
                     )
                 },

@@ -3,6 +3,7 @@ package com.example.musicfilemanager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -11,14 +12,17 @@ import com.example.musicfilemanager.navigation.Routes
 import com.example.musicfilemanager.ui.MainScreen
 import com.example.musicfilemanager.ui.MusicDetailScreen
 import com.example.musicfilemanager.ui.AddMusicScreen
+import com.example.musicfilemanager.ui.OldMusicScreen
 import com.example.musicfilemanager.ui.genres.AddGenreScreen
 import com.example.musicfilemanager.ui.genres.GenreListScreen
+import com.example.musicfilemanager.ui.genres.GenreUi
 import com.example.musicfilemanager.ui.stats.StatsScreen
 import com.example.musicfilemanager.ui.theme.AppTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
         setContent {
             AppTheme {
                 val nav = rememberNavController()
@@ -29,7 +33,7 @@ class MainActivity : ComponentActivity() {
                             onBottomItemClick = { when (it) {
                                 "home" -> nav.navigate(Routes.Stats)
                                 "genre" -> nav.navigate(Routes.Genres)
-                                "settings" -> {}
+                                "oldmusic" -> nav.navigate(Routes.OldMusic)
                                 else -> {}
                             }},
                             onItemClick = { id -> nav.navigate("detail/$id") },
@@ -65,25 +69,66 @@ class MainActivity : ComponentActivity() {
                     composable(Routes.Genres) {
                         GenreListScreen(
                             onAdd = { nav.navigate(Routes.AddGenre) },
+                            onEdit = { id -> nav.navigate(Routes.editGenre(id)) },
                             onBottomItemClick = { when (it) {
                                 "home" -> nav.navigate(Routes.Stats)
                                 "library" -> nav.navigate(Routes.Library)
-                                "settings" -> {}
+                                "oldmusic" -> nav.navigate(Routes.OldMusic)
                                 else -> {}
                             }}
                         ) 
                     }
                     composable(Routes.AddGenre) { AddGenreScreen(onBack = { nav.popBackStack() }, onSaved = { nav.popBackStack() }) }
-                    composable(Routes.Stats) { 
+                    // Route cho chỉnh sửa Genre
+                    composable(
+                        route = Routes.EditGenre,
+                        arguments = listOf(navArgument("id"){ defaultValue = "" })
+                    ) { backStack ->
+                        val id = backStack.arguments?.getString("id") ?: ""
+                        // TODO: Lấy thông tin genre từ DB theo id
+                        // Hiện tại dùng sample data mapping
+                        val genreToEdit = when (id) {
+                            "rock" -> GenreUi(id = "rock", name = "ROCK", description = "Nhạc rock bùng nổ", fileCount = 50)
+                            "pop" -> GenreUi(id = "pop", name = "POP", description = "Nhạc pop hiện đại", fileCount = 120)
+                            "jazz" -> GenreUi(id = "jazz", name = "JAZZ", description = "Nhạc Jazz ngẫu hứng", fileCount = 30)
+                            "hiphop" -> GenreUi(id = "hiphop", name = "HIP HOP", description = "Văn hóa Hip Hop", fileCount = 75)
+                            else -> GenreUi(id = id, name = "Unknown", description = "Thể loại không xác định", fileCount = 0)
+                        }
+                        AddGenreScreen(
+                            genreToEdit = genreToEdit,
+                            onBack = { nav.popBackStack() },
+                            onSaved = {
+                                // TODO: Lưu cập nhật vào DB
+                                nav.popBackStack()
+                            }
+                        )
+                    }
+                    composable(Routes.Stats) {
                         StatsScreen(
                             onBack = { nav.popBackStack() },
                             onBottomItemClick = { when (it) {
                                 "library" -> nav.navigate(Routes.Library)
                                 "genre" -> nav.navigate(Routes.Genres)
-                                "settings" -> {}
+                                "oldmusic" -> nav.navigate(Routes.OldMusic)
                                 else -> {}
                             }}
-                        ) 
+                        )
+                    }
+                    composable(Routes.OldMusic) {
+                        OldMusicScreen(
+                            onBack = { nav.popBackStack() },
+                            onItemClick = { id -> nav.navigate(Routes.detail(id)) },
+                            onEditClick = { id -> nav.navigate(Routes.editMusic(id)) },
+                            onDeleteClick = { id ->
+                                // TODO: Xóa nhạc
+                            },
+                            onBottomItemClick = { when (it) {
+                                "home" -> nav.navigate(Routes.Stats)
+                                "library" -> nav.navigate(Routes.Library)
+                                "genre" -> nav.navigate(Routes.Genres)
+                                else -> {}
+                            }}
+                        )
                     }
                     composable(
                         route = Routes.Detail,
