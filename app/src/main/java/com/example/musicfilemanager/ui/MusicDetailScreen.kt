@@ -29,7 +29,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.example.musicfilemanager.data.GenreRepository
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.musicfilemanager.viewmodel.GenreViewModel
 import com.example.musicfilemanager.model.sampleMusics
 import com.example.musicfilemanager.ui.theme.Gray900
 import com.example.musicfilemanager.ui.theme.TextPrimary
@@ -40,14 +41,15 @@ import com.example.musicfilemanager.ui.theme.TextSecondary
 @Composable
 fun MusicDetailScreen(
     musicId: String = "1",
+    genreViewModel: GenreViewModel = viewModel(),
     onBack: () -> Unit = {},
     onEdit: () -> Unit = {},
     onDelete: () -> Unit = {}
 ) {
     val music = remember(musicId) { sampleMusics.find { it.id == musicId } }
 
-    // Lấy genre name từ repository
-    val genres by GenreRepository.genres.collectAsState()
+    // Lấy genre name từ API qua GenreViewModel
+    val genres by genreViewModel.genres.collectAsState()
     val genreName = remember(music?.genreId, genres) {
         music?.genreId?.let { id ->
             genres.find { it.id == id }?.name ?: "Unknown"

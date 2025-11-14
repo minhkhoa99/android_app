@@ -6,9 +6,11 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -32,6 +34,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -42,16 +45,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.example.musicfilemanager.data.GenreRepository
-import com.example.musicfilemanager.model.Genre
 import com.example.musicfilemanager.model.sampleMusics
 import com.example.musicfilemanager.ui.theme.Gray800
 import com.example.musicfilemanager.ui.theme.Gray900
 import com.example.musicfilemanager.ui.theme.TextPrimary
 import com.example.musicfilemanager.ui.theme.TextSecondary
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.musicfilemanager.viewmodel.GenreViewModel
+import com.example.musicfilemanager.viewmodel.MusicViewModel
+import androidx.compose.ui.platform.LocalContext
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -61,40 +66,155 @@ fun AddMusicScreen(
     onBack: () -> Unit,
     onSaved: () -> Unit = {}
 ) {
-    // Lấy danh sách genres từ repository (không bao gồm "Tất cả")
-    val availableGenres by GenreRepository.genres.collectAsState()
-    val genresForMusic = remember(availableGenres) {
-        availableGenres.filter { it.id != "all" }
-    }
+    // ViewModels
+    val genreViewModel: GenreViewModel = viewModel()
+    val musicViewModel: MusicViewModel = viewModel()
+
+    val apiGenres by genreViewModel.genres.collectAsState()
+    val genresForMusic = remember(apiGenres) { apiGenres.filter { it.id != "all" } }
+
+    // State từ MusicViewModel
+    val isLoading by musicViewModel.isLoading.collectAsState()
+    val apiError by musicViewModel.error.collectAsState()
+    val successMessage by musicViewModel.successMessage.collectAsState()
+
+    // Local error state
+    var localError by remember { mutableStateOf<String?>(null) }
+
+    // Upload state
+    var uploadProgress by remember { mutableStateOf<String?>(null) }
+    var uploadedFileCode by remember { mutableStateOf<String?>(null) }
+    var uploadedDownloadLink by remember { mutableStateOf<String?>(null) }
+    var isUploading by remember { mutableStateOf(false) }
+
+    // Context và coroutine
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+
+    // Khai báo các biến state trước
+    var selectedGenreId by remember { mutableStateOf("") }
+    var fileUri by remember { mutableStateOf<Uri?>(null) }
 
     // Lấy dữ liệu hiện có nếu đang ở chế độ chỉnh sửa
     val existingMusic = remember(musicId) {
         musicId?.let { id -> sampleMusics.find { it.id == id } }
     }
-
-    // isEditMode dựa vào musicId, không phải existingMusic
-    // Vì có thể musicId hợp lệ nhưng không có trong sampleMusics
     val isEditMode = musicId != null
 
-    var fileUri by remember { mutableStateOf<Uri?>(null) }
     var title by remember { mutableStateOf(existingMusic?.title ?: "") }
     var artist by remember { mutableStateOf(existingMusic?.artist ?: "") }
     var album by remember { mutableStateOf(existingMusic?.album ?: "") }
     var year by remember { mutableStateOf("2020") }
     var duration by remember { mutableStateOf(existingMusic?.duration ?: "") }
     var size by remember { mutableStateOf("5.0 MB") }
-    var selectedGenreId by remember { mutableStateOf(existingMusic?.genreId ?: "pop") }
+    var description by remember { mutableStateOf("") }
     var expanded by remember { mutableStateOf(false) }
-    var error by remember { mutableStateOf<String?>(null) }
+
+    // Hiển thị lỗi từ API
+    LaunchedEffect(apiError) {
+        if (apiError != null) {
+            localError = apiError
+        }
+    }
+
+    // Navigate back khi thành công
+    LaunchedEffect(successMessage) {
+        if (successMessage != null) {
+            kotlinx.coroutines.delay(500)
+            musicViewModel.clearSuccessMessage()
+            musicViewModel.clearError()
+            onSaved()
+        }
+    }
+
+    // Clear error khi user chỉnh sửa
+    LaunchedEffect(title, artist, album) {
+        if (localError != null && apiError != null) {
+            localError = null
+            musicViewModel.clearError()
+        }
+    }
+
+    // Khi danh sách genres tải xong nếu chưa chọn thì auto chọn genre đầu tiên
+    LaunchedEffect(genresForMusic) {
+        if (selectedGenreId.isBlank() && genresForMusic.isNotEmpty()) {
+            selectedGenreId = genresForMusic.first().id
+        }
+    }
+
+    // Nếu vào chế độ edit mà chưa set selectedGenreId thì set từ existingMusic
+    LaunchedEffect(existingMusic) {
+        if (isEditMode && existingMusic != null) {
+            selectedGenreId = existingMusic.genreId
+        }
+    }
 
     val pickMusic = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument(),
         onResult = { uri ->
             if (uri != null) {
                 fileUri = uri
-                // gợi ý: đọc metadata thật ở đây (sau sẽ nối ContentResolver/MediaMetadataRetriever)
+
+                // Upload ngay sau khi chọn file
+                coroutineScope.launch {
+                    try {
+                        isUploading = true
+                        uploadProgress = "Đang chuẩn bị upload file..."
+                        localError = null
+
+                        // Convert URI sang File
+                        val file = context.getFileFromUri(uri)
+                        if (file == null) {
+                            localError = "Không thể đọc file. Vui lòng chọn lại."
+                            uploadProgress = null
+                            isUploading = false
+                            fileUri = null
+                            return@launch
+                        }
+
+                        uploadProgress = "Đang upload file lên server..."
+
+                        // Generate tempFileCode để gửi lên (server required)
+                        val timestamp = System.currentTimeMillis()
+                        val tempFileName = file.nameWithoutExtension.take(20)
+                        val tempFileCode = "${tempFileName.replace(Regex("[^A-Za-z0-9]"), "_").uppercase()}_${timestamp}"
+
+                        // Upload file - Gửi tempFileCode nhưng nhận fileCode chính thức từ server
+                        val uploadResult = musicViewModel.uploadMusicFile(file, tempFileCode, file.name)
+
+                        // Xóa temp file
+                        file.delete()
+
+                        if (uploadResult == null) {
+                            localError = apiError ?: "Upload file thất bại. Vui lòng thử lại."
+                            uploadProgress = null
+                            isUploading = false
+                            fileUri = null
+                            uploadedFileCode = null
+                            uploadedDownloadLink = null
+                        } else {
+                            // Lưu fileCode và downloadLink từ server
+                            uploadedFileCode = uploadResult.fileCode
+                            uploadedDownloadLink = uploadResult.downloadLink
+                            uploadProgress = "✓ Upload thành công! File code: ${uploadResult.fileCode}"
+                            isUploading = false
+
+                            // Auto fill file name nếu title trống
+                            if (title.isBlank()) {
+                                title = file.nameWithoutExtension
+                            }
+                        }
+
+                    } catch (e: Exception) {
+                        localError = e.message ?: "Có lỗi xảy ra khi upload"
+                        uploadProgress = null
+                        isUploading = false
+                        fileUri = null
+                        uploadedFileCode = null
+                        uploadedDownloadLink = null
+                    }
+                }
             }
-            // Nếu uri == null, user đã cancel picker → không làm gì cả, quay về form
         }
     )
 
@@ -170,15 +290,45 @@ fun AddMusicScreen(
                 )
             }
 
-            field("Mã File", value = fileUri?.lastPathSegment ?: "", onChange = {}, placeholder = "Tự lấy từ URI")
+            // Hiển thị tên file đã chọn (nếu có)
+            if (fileUri != null) {
+                OutlinedTextField(
+                    value = fileUri?.lastPathSegment ?: "",
+                    onValueChange = {},
+                    label = { Text("File đã chọn") },
+                    readOnly = true,
+                    enabled = false,
+                    singleLine = true,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 6.dp)
+                )
+            }
+
+            // Hiển thị fileCode từ server (sau khi upload thành công)
+            if (uploadedFileCode != null) {
+                OutlinedTextField(
+                    value = uploadedFileCode ?: "",
+                    onValueChange = {},
+                    label = { Text("Mã File (từ Server)") },
+                    readOnly = true,
+                    enabled = false,
+                    singleLine = true,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 6.dp)
+                )
+            }
+
             field("Tên Bài Hát", title, { title = it }, "VD: Bài hát mẫu")
             field("Nghệ Sĩ", artist, { artist = it }, "VD: Nghệ sĩ A")
             field("Album", album, { album = it }, "VD: Album Demo")
             field("Năm Phát Hành", year, { year = it }, "VD: 2020")
             field("Thời lượng", duration, { duration = it }, "VD: 4:00")
             field("Kích thước", size, { size = it }, "VD: 5.0 MB")
+            field("Mô Tả", description, { description = it }, "VD: Bài hát hay")
 
-            // Dropdown thể loại
+            // Dropdown thể loại (lấy từ API)
             ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !expanded }) {
                 OutlinedTextField(
                     modifier = Modifier
@@ -186,7 +336,8 @@ fun AddMusicScreen(
                         .fillMaxWidth()
                         .padding(vertical = 6.dp),
                     readOnly = true,
-                    value = genresForMusic.find { it.id == selectedGenreId }?.name ?: "Pop",
+                    value = genresForMusic.find { it.id == selectedGenreId }?.name
+                        ?: if (genresForMusic.isNotEmpty()) genresForMusic.first().name else "",
                     onValueChange = {},
                     label = { Text("Thể loại") },
                     trailingIcon = { Icon(Icons.Outlined.KeyboardArrowDown, null) }
@@ -201,33 +352,227 @@ fun AddMusicScreen(
                 }
             }
 
-            if (error != null) {
-                Text(error!!, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 4.dp))
+            // Hiển thị error message
+            if (localError != null) {
+                Spacer(Modifier.height(12.dp))
+                androidx.compose.material3.Surface(
+                    color = Color(0x20FF5252),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Outlined.AudioFile,
+                            contentDescription = null,
+                            tint = Color(0xFFFF5252),
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            text = localError ?: "",
+                            color = Color(0xFFFF5252),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
+            }
+
+            // Hiển thị success message
+            if (successMessage != null) {
+                Spacer(Modifier.height(12.dp))
+                androidx.compose.material3.Surface(
+                    color = Color(0x204CAF50),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Outlined.AudioFile,
+                            contentDescription = null,
+                            tint = Color(0xFF4CAF50),
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            text = successMessage ?: "",
+                            color = Color(0xFF4CAF50),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
+            }
+
+            // Hiển thị upload progress
+            if (uploadProgress != null) {
+                Spacer(Modifier.height(12.dp))
+                androidx.compose.material3.Surface(
+                    color = Color(0x205AC8FA),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        androidx.compose.material3.CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            strokeWidth = 2.dp,
+                            color = Color(0xFF5AC8FA)
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            text = uploadProgress ?: "",
+                            color = Color(0xFF5AC8FA),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
             }
 
             Spacer(Modifier.height(20.dp))
 
             GradientButton(
-                text = if (isEditMode) "Cập Nhật" else "Lưu",
-                modifier = Modifier.fillMaxWidth()
+                text = if (isLoading) "Đang xử lý..." else if (isEditMode) "Cập Nhật" else "Lưu",
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !isLoading && !isUploading
             ) {
                 // Validate đơn giản
                 if (isEditMode) {
                     // Ở chế độ chỉnh sửa, chỉ cần có title
                     if (title.isBlank()) {
-                        error = "Vui lòng nhập Tên Bài Hát."
+                        localError = "Vui lòng nhập Tên Bài Hát."
                         return@GradientButton
                     }
                 } else {
-                    // Ở chế độ thêm mới, cần cả file và title
-                    if (fileUri == null || title.isBlank()) {
-                        error = "Vui lòng chọn file và nhập Tên Bài Hát."
+                    // Ở chế độ thêm mới, cần file đã upload và title
+                    if (uploadedFileCode == null || uploadedDownloadLink == null || title.isBlank()) {
+                        localError = "Vui lòng chọn file (đợi upload xong) và nhập Tên Bài Hát."
                         return@GradientButton
                     }
                 }
-                error = null
-                // TODO: lưu vào Room/Repository rồi:
-                onSaved()
+
+                localError = null
+
+                // Chuyển selectedGenreId (string) sang genreId (Int) từ API
+                val genreWithId = genreViewModel.getGenreWithIdByCode(selectedGenreId)
+                val genreApiId = genreWithId?.apiId
+
+                if (genreApiId == null) {
+                    localError = "Không tìm thấy thể loại. Vui lòng chọn lại."
+                    return@GradientButton
+                }
+
+                // Parse duration từ "4:00" thành seconds
+                val durationInSeconds = try {
+                    val parts = duration.split(":")
+                    if (parts.size == 2) {
+                        val minutes = parts[0].toIntOrNull() ?: 0
+                        val seconds = parts[1].toIntOrNull() ?: 0
+                        minutes * 60 + seconds
+                    } else {
+                        240 // default 4 minutes
+                    }
+                } catch (_: Exception) {
+                    240
+                }
+
+                // Parse file size từ "5.0 MB" thành bytes
+                val fileSizeInBytes = try {
+                    val sizeStr = size.replace(Regex("[^0-9.]"), "")
+                    val sizeFloat = sizeStr.toFloatOrNull() ?: 5.0f
+                    (sizeFloat * 1024 * 1024).toLong()
+                } catch (_: Exception) {
+                    5242880L // 5MB default
+                }
+
+                // Parse year
+                val releaseYear = year.toIntOrNull()
+
+                if (isEditMode) {
+                    // Cập nhật file nhạc
+                    val musicWithId = musicViewModel.getMusicFileWithIdByCode(musicId!!)
+                    val apiId = musicWithId?.apiId
+
+                    if (apiId == null) {
+                        localError = "Không tìm thấy ID file nhạc để cập nhật"
+                        return@GradientButton
+                    }
+
+                    // Generate fileCode mới cho update
+                    val timestamp = System.currentTimeMillis()
+                    val baseName = title.replace(Regex("[^A-Za-z0-9]"), "_").uppercase().take(20)
+                    val fileCode = "${baseName}_${timestamp}"
+
+                    val filePath = fileUri?.toString() ?: "/storage/music/${fileCode.lowercase()}.mp3"
+                    val fileType = fileUri?.lastPathSegment?.substringAfterLast(".", "mp3") ?: "mp3"
+
+                    musicViewModel.updateMusicFile(
+                        id = apiId,
+                        fileCode = fileCode,
+                        fileName = title,
+                        genreId = genreApiId,
+                        filePath = filePath,
+                        fileType = fileType,
+                        artist = artist.ifBlank { null },
+                        album = album.ifBlank { null },
+                        releaseYear = releaseYear,
+                        description = description.ifBlank { null },
+                        duration = durationInSeconds,
+                        fileSize = fileSizeInBytes
+                    )
+                } else {
+                    // Tạo mới file nhạc - SỬ DỤNG DATA ĐÃ UPLOAD
+                    coroutineScope.launch {
+                        try {
+                            localError = null
+                            uploadProgress = "Đang lưu thông tin vào database..."
+
+                            // Sử dụng fileCode và downloadLink đã upload
+                            val fileCode = uploadedFileCode!!
+                            val downloadLink = uploadedDownloadLink!!
+
+                            // Generate filePath và fileType
+                            val filePath = "/storage/music/${fileCode.lowercase()}.mp3"
+                            val fileType = fileUri?.lastPathSegment?.substringAfterLast(".", "mp3") ?: "mp3"
+
+                            // Tạo metadata với downloadLink đã có
+                            val createSuccess = musicViewModel.createMusicFileAndWait(
+                                fileCode = fileCode,
+                                fileName = title,
+                                genreId = genreApiId,
+                                filePath = filePath,
+                                fileType = fileType,
+                                downloadLink = downloadLink,
+                                artist = artist.ifBlank { null },
+                                album = album.ifBlank { null },
+                                releaseYear = releaseYear,
+                                description = description.ifBlank { null },
+                                duration = durationInSeconds,
+                                fileSize = fileSizeInBytes
+                            )
+
+                            uploadProgress = null
+
+                            if (!createSuccess) {
+                                localError = apiError ?: "Lưu thông tin thất bại. Vui lòng thử lại."
+                            } else {
+                                // Reset uploaded data sau khi thành công
+                                uploadedFileCode = null
+                                uploadedDownloadLink = null
+                            }
+
+                        } catch (e: Exception) {
+                            localError = e.message ?: "Có lỗi xảy ra khi lưu"
+                            uploadProgress = null
+                        }
+                    }
+                }
             }
         }
     }
@@ -238,6 +583,7 @@ fun AddMusicScreen(
 fun GradientButton(
     text: String,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
     onClick: () -> Unit
 ) {
     val gradient = Brush.horizontalGradient(
@@ -245,16 +591,57 @@ fun GradientButton(
     )
     Button(
         onClick = onClick,
+        enabled = enabled,
         modifier = modifier.height(50.dp),
         colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent)
     ) {
         Box(
             Modifier
                 .fillMaxSize()
-                .background(gradient, RoundedCornerShape(8.dp)),
+                .background(
+                    if (enabled) gradient else Brush.horizontalGradient(listOf(Color(0xFF555555), Color(0xFF555555))),
+                    RoundedCornerShape(8.dp)
+                ),
             contentAlignment = Alignment.Center
         ) {
-            Text(text, color = TextPrimary, fontWeight = FontWeight.SemiBold)
+            Text(text, color = if (enabled) TextPrimary else Color(0xFF999999))
         }
     }
 }
+
+/**
+ * Helper function để convert URI sang File
+ */
+private fun android.content.Context.getFileFromUri(uri: Uri): java.io.File? {
+    return try {
+        val inputStream = contentResolver.openInputStream(uri) ?: return null
+
+        // Lấy tên file thực từ ContentResolver
+        var fileName = "temp_${System.currentTimeMillis()}.mp3"
+
+        contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+            val nameIndex = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+            if (nameIndex >= 0 && cursor.moveToFirst()) {
+                fileName = cursor.getString(nameIndex) ?: fileName
+            }
+        }
+
+        // Nếu vẫn không có extension, thêm .mp3
+        if (!fileName.contains(".")) {
+            fileName = "$fileName.mp3"
+        }
+
+        val tempFile = java.io.File(cacheDir, fileName)
+
+        inputStream.use { input ->
+            tempFile.outputStream().use { output ->
+                input.copyTo(output)
+            }
+        }
+
+        tempFile
+    } catch (e: Exception) {
+        null
+    }
+}
+

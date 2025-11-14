@@ -23,7 +23,8 @@ data class Music(
     val artist: String,
     val album: String,
     val duration: String,
-    val genreId: String, // Thay đổi từ Genre object sang genreId
+    val genreId: String, // UI genre code (pop, rock, jazz, etc.)
+    val apiGenreId: Int? = null, // API genre ID (1, 2, 3, 4, etc.) - để lookup động
     val coverUrl: String? = null // dùng khi muốn load ảnh thật
 )
 

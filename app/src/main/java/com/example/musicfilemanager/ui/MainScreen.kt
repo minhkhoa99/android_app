@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -23,10 +24,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.example.musicfilemanager.data.GenreRepository
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.musicfilemanager.model.Genre
 import com.example.musicfilemanager.model.Music
-import com.example.musicfilemanager.model.sampleMusics
+import com.example.musicfilemanager.viewmodel.MusicViewModel
+import com.example.musicfilemanager.viewmodel.GenreViewModel
 import com.example.musicfilemanager.ui.theme.AccentPurple
 import com.example.musicfilemanager.ui.theme.ChipBg
 import com.example.musicfilemanager.ui.theme.ChipSelected
@@ -39,9 +41,10 @@ import com.example.musicfilemanager.ui.theme.TextSecondary
 
 fun interface OnItemClick { fun click(id: String) }
 
-@Preview
 @Composable
 fun MainScreen(
+    musicViewModel: MusicViewModel = viewModel(),
+    genreViewModel: GenreViewModel = viewModel(),
     onAddClick: () -> Unit = {},
     onBottomItemClick: (String) -> Unit = {},
     onItemClick: (String) -> Unit = {},
@@ -51,13 +54,23 @@ fun MainScreen(
     var query by remember { mutableStateOf("") }
     var selected by remember { mutableStateOf(Genre.All) }
 
-    // Lấy danh sách genres từ repository
-    val availableGenres by GenreRepository.genres.collectAsState()
+    // Lấy danh sách genres từ API qua GenreViewModel
+    val availableGenres by genreViewModel.genres.collectAsState()
 
-    val data = remember(query, selected) {
-        sampleMusics
+    // Lấy danh sách music từ ViewModel
+    val allMusicFiles by musicViewModel.musicFiles.collectAsState()
+    val isLoading by musicViewModel.isLoading.collectAsState()
+
+    // Filter dữ liệu local
+    val data = remember(query, selected, allMusicFiles) {
+        allMusicFiles
             .filter { selected.id == "all" || it.genreId == selected.id }
             .filter { it.title.contains(query, ignoreCase = true) || it.artist.contains(query, true) }
+    }
+
+    // Load data when screen is first shown
+    LaunchedEffect(Unit) {
+        musicViewModel.loadMusicFiles()
     }
 
     Scaffold(
@@ -93,12 +106,24 @@ fun MainScreen(
                 onSelected = { selected = it }
             )
             Spacer(Modifier.height(12.dp))
-            MusicList(
-                data = data,
-                onItemClick = onItemClick,
-                onEditClick = onEditClick,
-                onDeleteClick = onDeleteClick
-            )
+
+            // Show loading indicator
+            if (isLoading && data.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(color = AccentPurple)
+                }
+            } else {
+                MusicList(
+                    data = data,
+                    genreViewModel = genreViewModel,
+                    onItemClick = onItemClick,
+                    onEditClick = onEditClick,
+                    onDeleteClick = onDeleteClick
+                )
+            }
         }
     }
 }
@@ -142,8 +167,11 @@ private fun FilterChips(
     selected: Genre,
     onSelected: (Genre) -> Unit
 ) {
-    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        items.forEach { g ->
+    LazyRow(
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        contentPadding = PaddingValues(horizontal = 2.dp)
+    ) {
+        items(items) { g ->
             val isSelected = g == selected
             val bg = if (isSelected) ChipSelected else ChipBg
             val txt = if (isSelected) Color.White else TextPrimary
@@ -167,6 +195,7 @@ private fun FilterChips(
 @Composable
 private fun MusicList(
     data: List<Music>,
+    genreViewModel: GenreViewModel,
     onItemClick: (String) -> Unit = {},
     onEditClick: (String) -> Unit = {},
     onDeleteClick: (String) -> Unit = {}
@@ -179,6 +208,7 @@ private fun MusicList(
         items(data, key = { it.id }) { item ->
             MusicCard(
                 music = item,
+                genreViewModel = genreViewModel,
                 onClick = { onItemClick(item.id) },
                 onEditClick = { onEditClick(item.id) },
                 onDeleteClick = { onDeleteClick(item.id) }
@@ -190,14 +220,21 @@ private fun MusicList(
 @Composable
 private fun MusicCard(
     music: Music,
+    genreViewModel: GenreViewModel,
     onClick: () -> Unit = {},
     onEditClick: () -> Unit = {},
     onDeleteClick: () -> Unit = {}
 ) {
-    // Lấy genre name từ repository
-    val genres by GenreRepository.genres.collectAsState()
-    val genreName = remember(music.genreId, genres) {
-        genres.find { it.id == music.genreId }?.name ?: "Unknown"
+    // Lấy genre name từ API qua GenreViewModel bằng apiGenreId
+    val genresWithId by genreViewModel.genresWithId.collectAsState()
+    val genreName = remember(music.apiGenreId, genresWithId) {
+        if (music.apiGenreId != null) {
+            // Tìm genre theo API ID
+            genresWithId.find { it.apiId == music.apiGenreId }?.name ?: "Unknown"
+        } else {
+            // Fallback nếu không có apiGenreId (data cũ)
+            "Unknown"
+        }
     }
 
     Surface(

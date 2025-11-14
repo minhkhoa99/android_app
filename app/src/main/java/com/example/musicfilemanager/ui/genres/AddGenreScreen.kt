@@ -41,11 +41,28 @@ fun AddGenreScreen(
     val apiError by viewModel.error.collectAsState()
     val successMessage by viewModel.successMessage.collectAsState()
 
+    // Show API error in errorMessage
+    LaunchedEffect(apiError) {
+        if (apiError != null) {
+            errorMessage = apiError
+        }
+    }
+
     // Navigate back on success
     LaunchedEffect(successMessage) {
         if (successMessage != null) {
             kotlinx.coroutines.delay(500)
+            viewModel.clearSuccessMessage()
+            viewModel.clearError()
             onSaved()
+        }
+    }
+
+    // Clear error when user starts editing
+    LaunchedEffect(code, name, desc, ageRange) {
+        if (errorMessage != null && apiError != null) {
+            errorMessage = null
+            viewModel.clearError()
         }
     }
 
@@ -149,25 +166,59 @@ fun AddGenreScreen(
             )
 
             // Show error messages
-            if (errorMessage != null || apiError != null) {
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    text = errorMessage ?: apiError ?: "",
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(horizontal = 4.dp)
-                )
+            if (errorMessage != null) {
+                Spacer(Modifier.height(12.dp))
+                Surface(
+                    color = Color(0x20FF5252),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.Top
+                    ) {
+                        Icon(
+                            Icons.Outlined.Tag,
+                            contentDescription = null,
+                            tint = Color(0xFFFF5252),
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            text = errorMessage ?: "",
+                            color = Color(0xFFFF5252),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
             }
 
             // Show success message
             if (successMessage != null) {
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    text = successMessage ?: "",
-                    color = Color(0xFF4CAF50),
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(horizontal = 4.dp)
-                )
+                Spacer(Modifier.height(12.dp))
+                Surface(
+                    color = Color(0x204CAF50),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.Top
+                    ) {
+                        Icon(
+                            Icons.Outlined.Tag,
+                            contentDescription = null,
+                            tint = Color(0xFF4CAF50),
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            text = successMessage ?: "",
+                            color = Color(0xFF4CAF50),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
             }
 
             Spacer(Modifier.weight(1f))

@@ -19,7 +19,11 @@ data class GenreWithId(
     val description: String? = null,
     val ageRange: String? = null,
     val totalFiles: Int = 0
-)
+) {
+    // Helper properties để truy cập dễ hơn
+    val code: String get() = genre.id
+    val name: String get() = genre.name
+}
 
 /**
  * Repository mới sử dụng API thực

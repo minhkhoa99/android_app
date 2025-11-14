@@ -1,0 +1,10 @@
+{
+  "/api/*": "/$1",
+  "/api/music-files": "/musicFiles",
+  "/api/music-files/:id": "/musicFiles/:id",
+  "/api/music-files/code/:code": "/musicFiles?fileCode=:code",
+  "/api/music-files/search?keyword=:keyword": "/musicFiles?q=:keyword",
+  "/api/music-files/filter/genre/:genreId": "/musicFiles?genreId=:genreId",
+  "/api/music-files/filter/year/:year": "/musicFiles?releaseYear=:year"
+}
+

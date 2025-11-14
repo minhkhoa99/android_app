@@ -151,5 +151,14 @@ class GenreViewModel : ViewModel() {
      * Get GenreWithId by code for edit/delete
      */
     fun getGenreWithIdByCode(code: String) = repository.getGenreWithIdByCode(code)
+
+    /**
+     * Map API genreId (Int) to UI genreCode (String)
+     * Lookup từ genres đã load từ API
+     */
+    fun mapGenreIdToCode(apiGenreId: Int): String {
+        val genreWithId = genresWithId.value.find { it.apiId == apiGenreId }
+        return genreWithId?.code ?: "pop" // fallback to "pop" if not found
+    }
 }
 

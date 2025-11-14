@@ -58,6 +58,19 @@ object ApiClient {
     }
 
     /**
+     * Music API Service instance (port 3005)
+     */
+    val musicService: MusicApiService by lazy {
+        val musicRetrofit = Retrofit.Builder()
+            .baseUrl("http://10.0.2.2:3005/api/")
+            .client(okHttpClient)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+
+        musicRetrofit.create(MusicApiService::class.java)
+    }
+
+    /**
      * Update base URL if needed (optional)
      */
     fun updateBaseUrl(newBaseUrl: String): GenreApiService {
