@@ -18,14 +18,34 @@ data class Genre(
 }
 
 data class Music(
-    val id: String,
+    val id: String, // fileCode for UI display
     val title: String,
     val artist: String,
     val album: String,
     val duration: String,
     val genreId: String, // UI genre code (pop, rock, jazz, etc.)
     val apiGenreId: Int? = null, // API genre ID (1, 2, 3, 4, etc.) - để lookup động
+    val apiId: Int? = null, // API database ID for editing/deleting
     val coverUrl: String? = null // dùng khi muốn load ảnh thật
+)
+
+/**
+ * MusicDetail - Full information for editing
+ */
+data class MusicDetail(
+    val apiId: Int, // API database ID
+    val fileCode: String,
+    val fileName: String,
+    val artist: String?,
+    val album: String?,
+    val duration: Int?, // in seconds
+    val fileSize: Long?, // in bytes
+    val genreId: Int, // API genre ID
+    val releaseYear: Int?,
+    val description: String?,
+    val filePath: String?,
+    val fileType: String?,
+    val downloadLink: String?
 )
 
 val sampleMusics = listOf(

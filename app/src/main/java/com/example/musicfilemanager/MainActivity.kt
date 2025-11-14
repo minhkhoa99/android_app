@@ -4,6 +4,10 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -14,6 +18,7 @@ import com.example.musicfilemanager.ui.MainScreen
 import com.example.musicfilemanager.ui.MusicDetailScreen
 import com.example.musicfilemanager.ui.AddMusicScreen
 import com.example.musicfilemanager.ui.OldMusicScreen
+import com.example.musicfilemanager.ui.components.DeleteConfirmDialog
 import com.example.musicfilemanager.ui.genres.AddGenreScreen
 import com.example.musicfilemanager.ui.genres.GenreListScreen
 import com.example.musicfilemanager.ui.genres.GenreUi
@@ -21,6 +26,7 @@ import com.example.musicfilemanager.ui.genres.GenreIcon
 import com.example.musicfilemanager.ui.stats.StatsScreen
 import com.example.musicfilemanager.ui.theme.AppTheme
 import com.example.musicfilemanager.viewmodel.GenreViewModel
+import com.example.musicfilemanager.viewmodel.MusicViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -31,7 +37,14 @@ class MainActivity : ComponentActivity() {
                 val nav = rememberNavController()
                 NavHost(navController = nav, startDestination = Routes.Library) {
                     composable(Routes.Library) {
+                        val musicViewModel: MusicViewModel = viewModel()
+
+                        // State for delete confirmation dialog
+                        var showDeleteDialog by remember { mutableStateOf(false) }
+                        var musicToDelete by remember { mutableStateOf<Pair<Int, String>?>(null) } // apiId, title
+
                         MainScreen(
+                            musicViewModel = musicViewModel,
                             onAddClick = { nav.navigate(Routes.AddMusic) },
                             onBottomItemClick = { when (it) {
                                 "home" -> nav.navigate(Routes.Stats)
@@ -44,11 +57,32 @@ class MainActivity : ComponentActivity() {
                                 // Navigate đến màn chỉnh sửa
                                 nav.navigate(Routes.editMusic(id))
                             },
-                            onDeleteClick = { id ->
-                                // TODO: Hiển thị dialog xác nhận xóa
-                                // Sau khi xóa, reload danh sách
+                            onDeleteClick = { apiId, title ->
+                                // Hiển thị dialog xác nhận xóa
+                                musicToDelete = Pair(apiId, title)
+                                showDeleteDialog = true
                             }
                         )
+
+                        // Delete confirmation dialog
+                        if (showDeleteDialog && musicToDelete != null) {
+                            DeleteConfirmDialog(
+                                fileName = musicToDelete!!.second,
+                                onConfirm = {
+                                    // Gọi API xóa
+                                    musicViewModel.deleteMusicFile(
+                                        id = musicToDelete!!.first,
+                                        fileName = musicToDelete!!.second
+                                    )
+                                    showDeleteDialog = false
+                                    musicToDelete = null
+                                },
+                                onDismiss = {
+                                    showDeleteDialog = false
+                                    musicToDelete = null
+                                }
+                            )
+                        }
                     }
                     composable(Routes.AddMusic) {
                         AddMusicScreen(

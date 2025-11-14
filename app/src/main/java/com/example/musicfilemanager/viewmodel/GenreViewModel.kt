@@ -160,5 +160,14 @@ class GenreViewModel : ViewModel() {
         val genreWithId = genresWithId.value.find { it.apiId == apiGenreId }
         return genreWithId?.code ?: "pop" // fallback to "pop" if not found
     }
+
+    /**
+     * Get Genre by API ID
+     * Returns Genre with UI code (id) for selecting in dropdown
+     */
+    fun getGenreByApiId(apiGenreId: Int): Genre? {
+        val genreWithId = genresWithId.value.find { it.apiId == apiGenreId }
+        return genreWithId?.let { Genre(it.code, it.name) }
+    }
 }
 

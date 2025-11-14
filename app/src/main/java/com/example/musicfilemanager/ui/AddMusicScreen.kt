@@ -35,6 +35,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -46,7 +47,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.example.musicfilemanager.model.sampleMusics
 import com.example.musicfilemanager.ui.theme.Gray800
 import com.example.musicfilemanager.ui.theme.Gray900
 import com.example.musicfilemanager.ui.theme.TextPrimary
@@ -85,6 +85,10 @@ fun AddMusicScreen(
     var uploadProgress by remember { mutableStateOf<String?>(null) }
     var uploadedFileCode by remember { mutableStateOf<String?>(null) }
     var uploadedDownloadLink by remember { mutableStateOf<String?>(null) }
+    var uploadedFileSize by remember { mutableStateOf<Long?>(null) }
+    var uploadedDuration by remember { mutableStateOf<Int?>(null) }
+    var uploadedArtist by remember { mutableStateOf<String?>(null) }
+    var uploadedAlbum by remember { mutableStateOf<String?>(null) }
     var isUploading by remember { mutableStateOf(false) }
 
     // Context và coroutine
@@ -95,20 +99,63 @@ fun AddMusicScreen(
     var selectedGenreId by remember { mutableStateOf("") }
     var fileUri by remember { mutableStateOf<Uri?>(null) }
 
-    // Lấy dữ liệu hiện có nếu đang ở chế độ chỉnh sửa
-    val existingMusic = remember(musicId) {
-        musicId?.let { id -> sampleMusics.find { it.id == id } }
-    }
+    // Lấy dữ liệu từ API khi ở chế độ chỉnh sửa
+    val musicDetail by musicViewModel.selectedMusicDetail.collectAsState()
     val isEditMode = musicId != null
 
-    var title by remember { mutableStateOf(existingMusic?.title ?: "") }
-    var artist by remember { mutableStateOf(existingMusic?.artist ?: "") }
-    var album by remember { mutableStateOf(existingMusic?.album ?: "") }
+    var title by remember { mutableStateOf("") }
+    var artist by remember { mutableStateOf("") }
+    var album by remember { mutableStateOf("") }
     var year by remember { mutableStateOf("2020") }
-    var duration by remember { mutableStateOf(existingMusic?.duration ?: "") }
+    var duration by remember { mutableStateOf("") }
     var size by remember { mutableStateOf("5.0 MB") }
     var description by remember { mutableStateOf("") }
     var expanded by remember { mutableStateOf(false) }
+
+    // Load dữ liệu từ API khi ở chế độ edit
+    LaunchedEffect(musicId) {
+        if (musicId != null) {
+            // musicId là API ID (Int)
+            val apiId = musicId.toIntOrNull()
+            if (apiId != null) {
+                val detail = musicViewModel.loadMusicFileById(apiId)
+                if (detail != null) {
+                    // Populate form với dữ liệu từ API
+                    title = detail.fileName
+                    artist = detail.artist ?: ""
+                    album = detail.album ?: ""
+                    year = detail.releaseYear?.toString() ?: "2020"
+                    description = detail.description ?: ""
+
+                    // Convert duration từ seconds sang MM:SS
+                    if (detail.duration != null) {
+                        val minutes = detail.duration / 60
+                        val seconds = detail.duration % 60
+                        duration = String.format("%d:%02d", minutes, seconds)
+                    }
+
+                    // Convert fileSize từ bytes sang MB
+                    if (detail.fileSize != null) {
+                        val sizeInMB = detail.fileSize / (1024.0 * 1024.0)
+                        size = String.format("%.2f MB", sizeInMB)
+                    }
+
+                    // Set genre - cần map từ API genreId sang genreCode
+                    val genre = genreViewModel.getGenreByApiId(detail.genreId)
+                    if (genre != null) {
+                        selectedGenreId = genre.id
+                    }
+                }
+            }
+        }
+    }
+
+    // Cleanup khi component unmount
+    DisposableEffect(Unit) {
+        onDispose {
+            musicViewModel.clearSelectedMusicDetail()
+        }
+    }
 
     // Hiển thị lỗi từ API
     LaunchedEffect(apiError) {
@@ -142,12 +189,6 @@ fun AddMusicScreen(
         }
     }
 
-    // Nếu vào chế độ edit mà chưa set selectedGenreId thì set từ existingMusic
-    LaunchedEffect(existingMusic) {
-        if (isEditMode && existingMusic != null) {
-            selectedGenreId = existingMusic.genreId
-        }
-    }
 
     val pickMusic = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument(),
@@ -192,16 +233,48 @@ fun AddMusicScreen(
                             fileUri = null
                             uploadedFileCode = null
                             uploadedDownloadLink = null
+                            uploadedFileSize = null
+                            uploadedDuration = null
+                            uploadedArtist = null
+                            uploadedAlbum = null
                         } else {
-                            // Lưu fileCode và downloadLink từ server
+                            // Lưu tất cả metadata từ server
                             uploadedFileCode = uploadResult.fileCode
                             uploadedDownloadLink = uploadResult.downloadLink
+                            uploadedFileSize = uploadResult.fileSize
+                            uploadedDuration = uploadResult.duration
+                            uploadedArtist = uploadResult.artist
+                            uploadedAlbum = uploadResult.album
+
                             uploadProgress = "✓ Upload thành công! File code: ${uploadResult.fileCode}"
                             isUploading = false
 
                             // Auto fill file name nếu title trống
                             if (title.isBlank()) {
                                 title = file.nameWithoutExtension
+                            }
+
+                            // Auto fill artist nếu có từ metadata và trường đang trống
+                            if (artist.isBlank() && uploadResult.artist != null) {
+                                artist = uploadResult.artist
+                            }
+
+                            // Auto fill album nếu có từ metadata và trường đang trống
+                            if (album.isBlank() && uploadResult.album != null) {
+                                album = uploadResult.album
+                            }
+
+                            // Auto fill duration nếu có từ metadata
+                            if (uploadResult.duration != null) {
+                                val minutes = uploadResult.duration / 60
+                                val seconds = uploadResult.duration % 60
+                                duration = String.format("%d:%02d", minutes, seconds)
+                            }
+
+                            // Auto fill fileSize nếu có từ metadata
+                            if (uploadResult.fileSize != null) {
+                                val sizeInMB = uploadResult.fileSize / (1024.0 * 1024.0)
+                                size = String.format("%.2f MB", sizeInMB)
                             }
                         }
 
@@ -212,6 +285,10 @@ fun AddMusicScreen(
                         fileUri = null
                         uploadedFileCode = null
                         uploadedDownloadLink = null
+                        uploadedFileSize = null
+                        uploadedDuration = null
+                        uploadedArtist = null
+                        uploadedAlbum = null
                     }
                 }
             }
@@ -495,36 +572,51 @@ fun AddMusicScreen(
                 val releaseYear = year.toIntOrNull()
 
                 if (isEditMode) {
-                    // Cập nhật file nhạc
-                    val musicWithId = musicViewModel.getMusicFileWithIdByCode(musicId!!)
-                    val apiId = musicWithId?.apiId
+                    // Cập nhật file nhạc - Sử dụng API ID từ musicDetail
+                    // Store in local variable to avoid smart cast issues
+                    val detail = musicDetail
 
-                    if (apiId == null) {
-                        localError = "Không tìm thấy ID file nhạc để cập nhật"
+                    if (detail == null) {
+                        localError = "Không tìm thấy thông tin file nhạc để cập nhật"
                         return@GradientButton
                     }
 
-                    // Generate fileCode mới cho update
-                    val timestamp = System.currentTimeMillis()
-                    val baseName = title.replace(Regex("[^A-Za-z0-9]"), "_").uppercase().take(20)
-                    val fileCode = "${baseName}_${timestamp}"
+                    val apiId = detail.apiId
 
-                    val filePath = fileUri?.toString() ?: "/storage/music/${fileCode.lowercase()}.mp3"
-                    val fileType = fileUri?.lastPathSegment?.substringAfterLast(".", "mp3") ?: "mp3"
+                    // Giữ nguyên fileCode hiện tại (không generate mới)
+                    val fileCode = detail.fileCode
+
+                    // Nếu có upload file mới thì dùng uploadedFileCode, nếu không giữ nguyên
+                    val finalFileCode = uploadedFileCode ?: fileCode
+                    val finalDownloadLink = uploadedDownloadLink ?: detail.downloadLink
+
+                    // Sử dụng metadata từ upload nếu có, nếu không dùng từ form
+                    val finalArtist = uploadedArtist?.takeIf { it.isNotBlank() }
+                        ?: artist.ifBlank { null }
+
+                    val finalAlbum = uploadedAlbum?.takeIf { it.isNotBlank() }
+                        ?: album.ifBlank { null }
+
+                    val finalFileSize = uploadedFileSize ?: fileSizeInBytes
+                    val finalDuration = uploadedDuration ?: durationInSeconds
+
+                    val filePath = detail.filePath ?: "/storage/music/${finalFileCode.lowercase()}.mp3"
+                    val fileType = detail.fileType ?: "mp3"
 
                     musicViewModel.updateMusicFile(
                         id = apiId,
-                        fileCode = fileCode,
+                        fileCode = finalFileCode,
                         fileName = title,
                         genreId = genreApiId,
                         filePath = filePath,
                         fileType = fileType,
-                        artist = artist.ifBlank { null },
-                        album = album.ifBlank { null },
+                        downloadLink = finalDownloadLink,
+                        artist = finalArtist,
+                        album = finalAlbum,
                         releaseYear = releaseYear,
                         description = description.ifBlank { null },
-                        duration = durationInSeconds,
-                        fileSize = fileSizeInBytes
+                        duration = finalDuration,
+                        fileSize = finalFileSize
                     )
                 } else {
                     // Tạo mới file nhạc - SỬ DỤNG DATA ĐÃ UPLOAD
@@ -541,6 +633,40 @@ fun AddMusicScreen(
                             val filePath = "/storage/music/${fileCode.lowercase()}.mp3"
                             val fileType = fileUri?.lastPathSegment?.substringAfterLast(".", "mp3") ?: "mp3"
 
+                            // Sử dụng metadata từ upload, fallback sang form nếu không có
+                            val finalArtist = uploadedArtist?.takeIf { it.isNotBlank() }
+                                ?: artist.ifBlank { null }
+
+                            val finalAlbum = uploadedAlbum?.takeIf { it.isNotBlank() }
+                                ?: album.ifBlank { null }
+
+                            val finalFileSize = uploadedFileSize ?: run {
+                                // Parse từ form nếu không có từ upload
+                                try {
+                                    val sizeStr = size.replace(Regex("[^0-9.]"), "")
+                                    val sizeFloat = sizeStr.toFloatOrNull() ?: 5.0f
+                                    (sizeFloat * 1024 * 1024).toLong()
+                                } catch (_: Exception) {
+                                    5242880L // 5MB default
+                                }
+                            }
+
+                            val finalDuration = uploadedDuration ?: run {
+                                // Parse từ form nếu không có từ upload
+                                try {
+                                    val parts = duration.split(":")
+                                    if (parts.size == 2) {
+                                        val minutes = parts[0].toIntOrNull() ?: 0
+                                        val seconds = parts[1].toIntOrNull() ?: 0
+                                        minutes * 60 + seconds
+                                    } else {
+                                        240 // default 4 minutes
+                                    }
+                                } catch (_: Exception) {
+                                    240
+                                }
+                            }
+
                             // Tạo metadata với downloadLink đã có
                             val createSuccess = musicViewModel.createMusicFileAndWait(
                                 fileCode = fileCode,
@@ -549,12 +675,12 @@ fun AddMusicScreen(
                                 filePath = filePath,
                                 fileType = fileType,
                                 downloadLink = downloadLink,
-                                artist = artist.ifBlank { null },
-                                album = album.ifBlank { null },
+                                artist = finalArtist,
+                                album = finalAlbum,
                                 releaseYear = releaseYear,
                                 description = description.ifBlank { null },
-                                duration = durationInSeconds,
-                                fileSize = fileSizeInBytes
+                                duration = finalDuration,
+                                fileSize = finalFileSize
                             )
 
                             uploadProgress = null
@@ -565,6 +691,10 @@ fun AddMusicScreen(
                                 // Reset uploaded data sau khi thành công
                                 uploadedFileCode = null
                                 uploadedDownloadLink = null
+                                uploadedFileSize = null
+                                uploadedDuration = null
+                                uploadedArtist = null
+                                uploadedAlbum = null
                             }
 
                         } catch (e: Exception) {

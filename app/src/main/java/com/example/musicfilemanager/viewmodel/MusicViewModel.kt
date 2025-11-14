@@ -28,6 +28,10 @@ class MusicViewModel : ViewModel() {
     private val _selectedMusic = MutableStateFlow<Music?>(null)
     val selectedMusic: StateFlow<Music?> = _selectedMusic.asStateFlow()
 
+    // Selected music detail for editing (full information)
+    private val _selectedMusicDetail = MutableStateFlow<com.example.musicfilemanager.model.MusicDetail?>(null)
+    val selectedMusicDetail: StateFlow<com.example.musicfilemanager.model.MusicDetail?> = _selectedMusicDetail.asStateFlow()
+
     // Success message
     private val _successMessage = MutableStateFlow<String?>(null)
     val successMessage: StateFlow<String?> = _successMessage.asStateFlow()
@@ -163,6 +167,7 @@ class MusicViewModel : ViewModel() {
         genreId: Int,
         filePath: String? = null,
         fileType: String? = null,
+        downloadLink: String? = null,
         artist: String? = null,
         album: String? = null,
         releaseYear: Int? = null,
@@ -172,7 +177,7 @@ class MusicViewModel : ViewModel() {
     ) {
         viewModelScope.launch {
             val result = repository.updateMusicFile(
-                id, fileCode, fileName, genreId, filePath, fileType,
+                id, fileCode, fileName, genreId, filePath, fileType, downloadLink,
                 artist, album, releaseYear, description, duration, fileSize
             )
             when (result) {
@@ -252,5 +257,30 @@ class MusicViewModel : ViewModel() {
      * Get music file with ID by code
      */
     fun getMusicFileWithIdByCode(code: String) = repository.getMusicFileWithIdByCode(code)
+
+    /**
+     * Load music file by ID for editing
+     */
+    suspend fun loadMusicFileById(id: Int): com.example.musicfilemanager.model.MusicDetail? {
+        val result = repository.getMusicDetailById(id)
+        return when (result) {
+            is ApiResult.Success -> {
+                _selectedMusicDetail.value = result.data
+                result.data
+            }
+            is ApiResult.Error -> {
+                _selectedMusicDetail.value = null
+                null
+            }
+            is ApiResult.Loading -> null
+        }
+    }
+
+    /**
+     * Clear selected music detail
+     */
+    fun clearSelectedMusicDetail() {
+        _selectedMusicDetail.value = null
+    }
 }
 

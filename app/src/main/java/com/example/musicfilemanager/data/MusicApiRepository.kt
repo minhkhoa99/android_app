@@ -192,6 +192,44 @@ object MusicApiRepository {
     }
 
     /**
+     * Get music detail by ID for editing
+     */
+    suspend fun getMusicDetailById(id: Int): ApiResult<com.example.musicfilemanager.model.MusicDetail> {
+        _isLoading.value = true
+        _error.value = null
+
+        val result = safeApiCall { apiService.getMusicFileById(id) }
+        _isLoading.value = false
+
+        return when (result) {
+            is ApiResult.Success -> {
+                val data = result.data
+                val detail = com.example.musicfilemanager.model.MusicDetail(
+                    apiId = data.id,
+                    fileCode = data.fileCode,
+                    fileName = data.fileName,
+                    artist = data.artist,
+                    album = data.album,
+                    duration = data.duration,
+                    fileSize = data.fileSize,
+                    genreId = data.genreId,
+                    releaseYear = data.releaseYear,
+                    description = data.description,
+                    filePath = data.filePath,
+                    fileType = data.fileType,
+                    downloadLink = data.downloadLink
+                )
+                ApiResult.Success(detail)
+            }
+            is ApiResult.Error -> {
+                _error.value = result.message
+                result
+            }
+            is ApiResult.Loading -> result
+        }
+    }
+
+    /**
      * Create new music file via API
      */
     suspend fun createMusicFile(
@@ -256,6 +294,7 @@ object MusicApiRepository {
         genreId: Int,
         filePath: String? = null,
         fileType: String? = null,
+        downloadLink: String? = null,
         artist: String? = null,
         album: String? = null,
         releaseYear: Int? = null,
@@ -272,6 +311,7 @@ object MusicApiRepository {
             filePath = filePath,
             genreId = genreId,
             fileType = fileType,
+            downloadLink = downloadLink,
             artist = artist,
             album = album,
             releaseYear = releaseYear,
@@ -337,9 +377,16 @@ object MusicApiRepository {
     /**
      * Upload music file (Step 1: Upload file only)
      * Gửi fileCode tạm (server required), server sẽ trả về fileCode chính thức
-     * Returns UploadResult(fileCode, downloadLink)
+     * Returns UploadResult with fileCode, downloadLink, and additional metadata
      */
-    data class UploadResult(val fileCode: String, val downloadLink: String)
+    data class UploadResult(
+        val fileCode: String,
+        val downloadLink: String,
+        val fileSize: Long? = null,
+        val duration: Int? = null,
+        val artist: String? = null,
+        val album: String? = null
+    )
 
     suspend fun uploadMusicFile(file: java.io.File, tempFileCode: String, fileName: String): ApiResult<UploadResult> {
         _isLoading.value = true
@@ -380,9 +427,23 @@ object MusicApiRepository {
                 is ApiResult.Success -> {
                     val fileCode = result.data.fileCode
                     val downloadLink = result.data.downloadLink
+                    val fileSize = result.data.fileSize
+                    val duration = result.data.duration
+                    val artist = result.data.artist
+                    val album = result.data.album
+
                     _isLoading.value = false
                     return if (fileCode != null && downloadLink != null) {
-                        ApiResult.Success(UploadResult(fileCode, downloadLink))
+                        ApiResult.Success(
+                            UploadResult(
+                                fileCode = fileCode,
+                                downloadLink = downloadLink,
+                                fileSize = fileSize,
+                                duration = duration,
+                                artist = artist,
+                                album = album
+                            )
+                        )
                     } else {
                         _error.value = "Server không trả về fileCode hoặc downloadLink"
                         ApiResult.Error(_error.value!!)
@@ -426,7 +487,8 @@ private fun MusicFileResponse.toMusic(): Music {
         album = this.album ?: "Unknown Album",
         duration = formatDuration(this.duration ?: 0),
         genreId = "unknown", // Sẽ được map động ở UI layer
-        apiGenreId = this.genreId // Lưu API ID để lookup sau
+        apiGenreId = this.genreId, // Lưu API ID để lookup sau
+        apiId = this.id // Lưu database ID cho edit/delete
     )
 }
 

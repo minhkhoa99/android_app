@@ -49,7 +49,7 @@ fun MainScreen(
     onBottomItemClick: (String) -> Unit = {},
     onItemClick: (String) -> Unit = {},
     onEditClick: (String) -> Unit = {},
-    onDeleteClick: (String) -> Unit = {}
+    onDeleteClick: (Int, String) -> Unit = { _, _ -> } // Pass apiId and title
 ) {
     var query by remember { mutableStateOf("") }
     var selected by remember { mutableStateOf(Genre.All) }
@@ -198,7 +198,7 @@ private fun MusicList(
     genreViewModel: GenreViewModel,
     onItemClick: (String) -> Unit = {},
     onEditClick: (String) -> Unit = {},
-    onDeleteClick: (String) -> Unit = {}
+    onDeleteClick: (Int, String) -> Unit = { _, _ -> } // Pass apiId and title
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -210,8 +210,18 @@ private fun MusicList(
                 music = item,
                 genreViewModel = genreViewModel,
                 onClick = { onItemClick(item.id) },
-                onEditClick = { onEditClick(item.id) },
-                onDeleteClick = { onDeleteClick(item.id) }
+                onEditClick = {
+                    // Truyền apiId thay vì fileCode
+                    item.apiId?.let { apiId ->
+                        onEditClick(apiId.toString())
+                    }
+                },
+                onDeleteClick = {
+                    // Truyền apiId và title cho delete
+                    item.apiId?.let { apiId ->
+                        onDeleteClick(apiId, item.title)
+                    }
+                }
             )
         }
     }
