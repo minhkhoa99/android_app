@@ -71,6 +71,19 @@ object ApiClient {
     }
 
     /**
+     * Report API Service instance (port 3005)
+     */
+    val reportService: ReportApiService by lazy {
+        val reportRetrofit = Retrofit.Builder()
+            .baseUrl("http://10.0.2.2:3005/api/")
+            .client(okHttpClient)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+
+        reportRetrofit.create(ReportApiService::class.java)
+    }
+
+    /**
      * Update base URL if needed (optional)
      */
     fun updateBaseUrl(newBaseUrl: String): GenreApiService {

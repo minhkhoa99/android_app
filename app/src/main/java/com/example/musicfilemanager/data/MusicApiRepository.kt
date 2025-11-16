@@ -133,18 +133,43 @@ object MusicApiRepository {
         _error.value = null
 
         val result = safeApiCall { apiService.filterByGenre(genreId) }
-        _isLoading.value = false
 
-        return when (result) {
+        when (result) {
             is ApiResult.Success -> {
-                val musicList = result.data.content.map { it.toMusic() }
-                ApiResult.Success(musicList)
+                // Convert API response to domain model with IDs
+                val musicFileWithIdList = result.data.content.map { response ->
+                    MusicFileWithId(
+                        apiId = response.id,
+                        music = response.toMusic(),
+                        fileCode = response.fileCode,
+                        filePath = response.filePath,
+                        thumbnailPath = response.thumbnailPath,
+                        fileType = response.fileType,
+                        downloadLink = response.downloadLink,
+                        description = response.description,
+                        fileSize = response.fileSize,
+                        createdAt = response.createdAt,
+                        updatedAt = response.updatedAt
+                    )
+                }
+
+                // Store filtered list with IDs
+                _musicFilesWithId.value = musicFileWithIdList
+
+                // Extract music for normal use
+                _musicFiles.value = musicFileWithIdList.map { it.music }
+
+                _isLoading.value = false
+                return ApiResult.Success(_musicFiles.value)
             }
             is ApiResult.Error -> {
                 _error.value = result.message
-                result
+                _isLoading.value = false
+                return result
             }
-            is ApiResult.Loading -> result
+            is ApiResult.Loading -> {
+                return result
+            }
         }
     }
 

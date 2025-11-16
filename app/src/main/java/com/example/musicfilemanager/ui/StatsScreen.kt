@@ -23,16 +23,62 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.musicfilemanager.ui.theme.*
+import com.example.musicfilemanager.viewmodel.ReportViewModel
 
 /* -------------------- Public API -------------------- */
 
 @Preview
 @Composable
 fun StatsScreen(
+    reportViewModel: ReportViewModel = viewModel(),
     onBack: () -> Unit = {},
     onBottomItemClick: (String) -> Unit = {}
 ) {
+    // Collect states from ViewModel
+    val isLoading by reportViewModel.isLoading.collectAsState()
+    val storageReport by reportViewModel.storageReport.collectAsState()
+    val genreReports by reportViewModel.genreReports.collectAsState()
+    val yearReports by reportViewModel.yearReports.collectAsState()
+    val oldMusicReports by reportViewModel.oldMusicReports.collectAsState()
+
+    // Calculate storage percentage (assume max 10GB)
+    val maxStorage = 10L * 1024 * 1024 * 1024 // 10GB in bytes
+    val storagePercent = storageReport?.let {
+        (it.totalStorageSize.toFloat() / maxStorage).coerceIn(0f, 1f)
+    } ?: 0f
+
+    // Prepare genre data for donut chart
+    val genreChartData = remember(genreReports) {
+        if (genreReports.isEmpty()) {
+            emptyList()
+        } else {
+            val totalFiles = genreReports.sumOf { it.fileCount }
+            genreReports.map {
+                it.genreName to (it.fileCount.toFloat() / totalFiles.coerceAtLeast(1))
+            }
+        }
+    }
+
+    // Prepare year data for bar chart (take last 6 years)
+    val yearChartYears = remember(yearReports) {
+        yearReports.takeLast(6).map { it.year }
+    }
+    val yearChartValues = remember(yearReports) {
+        yearReports.takeLast(6).map { it.fileCount }
+    }
+
+    // Convert old music reports to OldSong data
+    val oldSongs = remember(oldMusicReports) {
+        oldMusicReports.map {
+            OldSong(
+                name = it.fileName,
+                year = it.releaseYear,
+                age = it.age
+            )
+        }
+    }
     Scaffold(
         topBar = { PillTopBar(title = "Báo cáo Thống kê", onBack = onBack) },
         containerColor = Gray900,
@@ -43,45 +89,54 @@ fun StatsScreen(
             )
         }
     ) { inner ->
-        LazyColumn(
+        Box(
             modifier = Modifier
                 .padding(inner)
                 .fillMaxSize()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            item {
-                StorageCard(
-                    percent = 0.85f,
-                    totalFiles = 150,
-                    totalSize = "1.5 GB"
-                )
+            if (isLoading && storageReport == null) {
+                // Show loading indicator
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(color = AccentPurple)
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    item {
+                        StorageCard(
+                            percent = storagePercent,
+                            totalFiles = storageReport?.totalFiles ?: 0,
+                            totalSize = storageReport?.formattedStorageSize ?: "0 B"
+                        )
+                    }
+                    if (genreChartData.isNotEmpty()) {
+                        item {
+                            GenreDonutCard(data = genreChartData)
+                        }
+                    }
+                    if (yearChartYears.isNotEmpty()) {
+                        item {
+                            YearBarChartCard(
+                                years = yearChartYears,
+                                values = yearChartValues
+                            )
+                        }
+                    }
+                    if (oldSongs.isNotEmpty()) {
+                        item {
+                            OldSongsCard(items = oldSongs)
+                        }
+                    }
+                    item { Spacer(Modifier.height(24.dp)) }
+                }
             }
-            item {
-                GenreDonutCard(
-                    data = listOf(
-                        "Pop" to 0.45f,
-                        "Rock" to 0.30f,
-                        "Jazz" to 0.15f,
-                        "Khác" to 0.10f
-                    )
-                )
-            }
-            item {
-                YearBarChartCard(
-                    years = listOf(2023, 2022, 2021, 2020, 2019, 2018).reversed(),
-                    values = listOf(45, 45, 36, 32, 20, 28).reversed()
-                )
-            }
-            item {
-                OldSongsCard(
-                    items = listOf(
-                        OldSong("Old Song.m33", 1980, 65),
-                        OldSong("Vintage Music.m33", 1975, 50)
-                    )
-                )
-            }
-            item { Spacer(Modifier.height(24.dp)) }
         }
     }
 }

@@ -56,21 +56,40 @@ fun MainScreen(
 
     // Lấy danh sách genres từ API qua GenreViewModel
     val availableGenres by genreViewModel.genres.collectAsState()
+    val genresWithId by genreViewModel.genresWithId.collectAsState()
 
     // Lấy danh sách music từ ViewModel
     val allMusicFiles by musicViewModel.musicFiles.collectAsState()
     val isLoading by musicViewModel.isLoading.collectAsState()
 
-    // Filter dữ liệu local
-    val data = remember(query, selected, allMusicFiles) {
-        allMusicFiles
-            .filter { selected.id == "all" || it.genreId == selected.id }
-            .filter { it.title.contains(query, ignoreCase = true) || it.artist.contains(query, true) }
+    // Local search filter (chỉ filter theo query, không filter genre ở đây nữa)
+    val data = remember(query, allMusicFiles) {
+        if (query.isNotBlank()) {
+            allMusicFiles.filter {
+                it.title.contains(query, ignoreCase = true) || it.artist.contains(query, true)
+            }
+        } else {
+            allMusicFiles
+        }
     }
 
     // Load data when screen is first shown
     LaunchedEffect(Unit) {
         musicViewModel.loadMusicFiles()
+    }
+
+    // Filter by genre when selected genre changes
+    LaunchedEffect(selected) {
+        if (selected.id == "all") {
+            // Load all music files
+            musicViewModel.loadMusicFiles()
+        } else {
+            // Find the API genre ID and filter
+            val genreWithId = genresWithId.find { it.genre.id == selected.id }
+            genreWithId?.let {
+                musicViewModel.filterByGenre(it.apiId)
+            }
+        }
     }
 
     Scaffold(
@@ -209,7 +228,12 @@ private fun MusicList(
             MusicCard(
                 music = item,
                 genreViewModel = genreViewModel,
-                onClick = { onItemClick(item.id) },
+                onClick = {
+                    // Truyền apiId thay vì fileCode cho detail screen
+                    item.apiId?.let { apiId ->
+                        onItemClick(apiId.toString())
+                    }
+                },
                 onEditClick = {
                     // Truyền apiId thay vì fileCode
                     item.apiId?.let { apiId ->
