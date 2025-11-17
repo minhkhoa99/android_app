@@ -71,6 +71,14 @@ interface MusicApiService {
     ): Response<PagedResponse<MusicFileResponse>>
 
     /**
+     * Filter music files for age 40+
+     * GET /api/music-files/filter/for-age-40-plus
+     * Returns array directly, not PagedResponse
+     */
+    @GET("music-files/filter/for-age-40-plus")
+    suspend fun getForAge40Plus(): Response<List<MusicFileResponse>>
+
+    /**
      * Create new music file
      * POST /api/music-files
      */

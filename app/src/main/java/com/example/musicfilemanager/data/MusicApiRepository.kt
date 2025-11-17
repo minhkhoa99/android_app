@@ -176,6 +176,48 @@ object MusicApiRepository {
     }
 
     /**
+     * Get music files for age 40+
+     * API returns List directly, not PagedResponse
+     */
+    suspend fun getForAge40Plus(): ApiResult<List<MusicFileWithId>> {
+        _isLoading.value = true
+        _error.value = null
+
+        val result = safeApiCall { apiService.getForAge40Plus() }
+        _isLoading.value = false
+
+        return when (result) {
+            is ApiResult.Success -> {
+                // Convert to MusicFileWithId to include all metadata
+                // result.data is already a List<MusicFileResponse>
+                val musicFileWithIdList = result.data.map { response ->
+                    MusicFileWithId(
+                        apiId = response.id,
+                        music = response.toMusic(),
+                        fileCode = response.fileCode,
+                        filePath = response.filePath,
+                        thumbnailPath = response.thumbnailPath,
+                        fileType = response.fileType,
+                        downloadLink = response.downloadLink,
+                        description = response.description,
+                        fileSize = response.fileSize,
+                        releaseYear = response.releaseYear,
+                        ageRange = response.ageRange,
+                        createdAt = response.createdAt,
+                        updatedAt = response.updatedAt
+                    )
+                }
+                ApiResult.Success(musicFileWithIdList)
+            }
+            is ApiResult.Error -> {
+                _error.value = result.message
+                result
+            }
+            is ApiResult.Loading -> result
+        }
+    }
+
+    /**
      * Get music file by ID
      */
     suspend fun getMusicFileById(id: Int): ApiResult<Music> {

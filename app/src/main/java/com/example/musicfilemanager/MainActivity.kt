@@ -163,7 +163,10 @@ class MainActivity : ComponentActivity() {
                         )
                     }
                     composable(Routes.OldMusic) {
+                        val musicViewModel: MusicViewModel = viewModel()
+
                         OldMusicScreen(
+                            musicViewModel = musicViewModel,
                             onBack = { nav.popBackStack() },
                             onItemClick = { id -> nav.navigate(Routes.detail(id)) },
                             onEditClick = { id -> nav.navigate(Routes.editMusic(id)) },

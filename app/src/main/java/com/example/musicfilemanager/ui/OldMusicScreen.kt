@@ -18,11 +18,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.musicfilemanager.ui.theme.*
+import com.example.musicfilemanager.viewmodel.MusicViewModel
 import java.util.Calendar
 
 data class OldMusicItem(
     val id: String,
+    val apiId: Int,
     val title: String,
     val artist: String,
     val year: Int,
@@ -32,6 +35,7 @@ data class OldMusicItem(
 @Preview
 @Composable
 fun OldMusicScreen(
+    musicViewModel: MusicViewModel = viewModel(),
     onBack: () -> Unit = {},
     onItemClick: (String) -> Unit = {},
     onEditClick: (String) -> Unit = {},
@@ -40,15 +44,25 @@ fun OldMusicScreen(
 ) {
     val currentYear = Calendar.getInstance().get(Calendar.YEAR)
 
-    // TODO: Lấy từ database thực - filter nhạc có năm < currentYear - 40
-    val oldMusicList = remember {
-        listOf(
-            OldMusicItem("1", "Old Song.mp3", "Nghệ sĩ A - Allison Demu", 1980, currentYear - 1980),
-            OldMusicItem("2", "Vintage Music.mp3", "Nghệ sĩ B", 1975, currentYear - 1975),
-            OldMusicItem("3", "Classic Hit.mp3", "Nghệ sĩ C", 1970, currentYear - 1970),
-            OldMusicItem("4", "Retro Song.mp3", "Nghệ sĩ D", 1965, currentYear - 1965),
-            OldMusicItem("5", "Golden Oldies.mp3", "Nghệ sĩ E", 1960, currentYear - 1960)
-        ).filter { it.age > 40 } // Chỉ lấy nhạc > 40 năm tuổi
+    // State để lưu danh sách nhạc từ API
+    var oldMusicList by remember { mutableStateOf<List<OldMusicItem>>(emptyList()) }
+    val isLoading by musicViewModel.isLoading.collectAsState()
+    val error by musicViewModel.error.collectAsState()
+
+    // Load dữ liệu từ API khi màn hình được tạo
+    LaunchedEffect(Unit) {
+        val musicFiles = musicViewModel.getForAge40Plus()
+        oldMusicList = musicFiles.map { musicFile ->
+            val year = musicFile.releaseYear ?: currentYear
+            OldMusicItem(
+                id = musicFile.fileCode,
+                apiId = musicFile.apiId,
+                title = musicFile.music.title,
+                artist = musicFile.music.artist,
+                year = year,
+                age = currentYear - year
+            )
+        }
     }
 
     Scaffold(
@@ -141,19 +155,43 @@ fun OldMusicScreen(
 
             Spacer(Modifier.height(16.dp))
 
-            // Danh sách nhạc cũ
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                contentPadding = PaddingValues(bottom = 84.dp)
-            ) {
-                items(oldMusicList, key = { it.id }) { music ->
-                    OldMusicCard(
-                        music = music,
-                        onClick = { onItemClick(music.id) },
-                        onEditClick = { onEditClick(music.id) },
-                        onDeleteClick = { onDeleteClick(music.id) }
+            // Hiển thị loading
+            if (isLoading) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(color = AccentPurple)
+                }
+            }
+            // Hiển thị error
+            else if (error != null) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = error ?: "Có lỗi xảy ra",
+                        color = Color.Red,
+                        style = MaterialTheme.typography.bodyMedium
                     )
+                }
+            }
+            // Hiển thị danh sách nhạc cũ
+            else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    contentPadding = PaddingValues(bottom = 84.dp)
+                ) {
+                    items(oldMusicList, key = { it.id }) { music ->
+                        OldMusicCard(
+                            music = music,
+                            onClick = { onItemClick(music.apiId.toString()) },
+                            onEditClick = { onEditClick(music.apiId.toString()) },
+                            onDeleteClick = { onDeleteClick(music.apiId.toString()) }
+                        )
+                    }
                 }
             }
         }

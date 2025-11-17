@@ -99,6 +99,18 @@ class MusicViewModel : ViewModel() {
     }
 
     /**
+     * Get music files for age 40+ (suspend version - returns result)
+     */
+    suspend fun getForAge40Plus(): List<com.example.musicfilemanager.data.MusicFileWithId> {
+        val result = repository.getForAge40Plus()
+        return when (result) {
+            is ApiResult.Success -> result.data
+            is ApiResult.Error -> emptyList()
+            is ApiResult.Loading -> emptyList()
+        }
+    }
+
+    /**
      * Create new music file (suspend version - await result)
      */
     suspend fun createMusicFileAndWait(
