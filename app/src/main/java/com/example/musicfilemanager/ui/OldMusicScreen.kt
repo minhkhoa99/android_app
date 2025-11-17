@@ -187,9 +187,7 @@ fun OldMusicScreen(
                     items(oldMusicList, key = { it.id }) { music ->
                         OldMusicCard(
                             music = music,
-                            onClick = { onItemClick(music.apiId.toString()) },
-                            onEditClick = { onEditClick(music.apiId.toString()) },
-                            onDeleteClick = { onDeleteClick(music.apiId.toString()) }
+                            onClick = { onItemClick(music.apiId.toString()) }
                         )
                     }
                 }
@@ -201,9 +199,7 @@ fun OldMusicScreen(
 @Composable
 private fun OldMusicCard(
     music: OldMusicItem,
-    onClick: () -> Unit = {},
-    onEditClick: () -> Unit = {},
-    onDeleteClick: () -> Unit = {}
+    onClick: () -> Unit = {}
 ) {
     Surface(
         color = Gray800,
@@ -284,32 +280,6 @@ private fun OldMusicCard(
             }
 
             Spacer(Modifier.width(8.dp))
-
-            // Nút chỉnh sửa
-            IconButton(
-                onClick = { onEditClick() },
-                modifier = Modifier.size(36.dp)
-            ) {
-                Icon(
-                    Icons.Outlined.Edit,
-                    contentDescription = "Chỉnh sửa",
-                    tint = Color(0xFF42A5F5),
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-
-            // Nút xóa
-            IconButton(
-                onClick = { onDeleteClick() },
-                modifier = Modifier.size(36.dp)
-            ) {
-                Icon(
-                    Icons.Outlined.Delete,
-                    contentDescription = "Xóa",
-                    tint = Color(0xFFEF5350),
-                    modifier = Modifier.size(20.dp)
-                )
-            }
         }
     }
 }
@@ -359,4 +329,3 @@ private fun BottomNavBar(current: String, onClick: (String) -> Unit) {
         }
     }
 }
-

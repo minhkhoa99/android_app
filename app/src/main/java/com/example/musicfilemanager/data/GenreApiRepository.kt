@@ -104,47 +104,6 @@ object GenreApiRepository {
             }
         }
     }
-
-    /**
-     * Get genre by ID from API
-     */
-    suspend fun getGenreById(id: Int): ApiResult<Genre> {
-        _isLoading.value = true
-        _error.value = null
-
-        val result = safeApiCall { apiService.getGenreById(id) }
-        _isLoading.value = false
-
-        return when (result) {
-            is ApiResult.Success -> ApiResult.Success(result.data.toGenre())
-            is ApiResult.Error -> {
-                _error.value = result.message
-                result
-            }
-            is ApiResult.Loading -> result
-        }
-    }
-
-    /**
-     * Get genre by code from API
-     */
-    suspend fun getGenreByCode(code: String): ApiResult<Genre> {
-        _isLoading.value = true
-        _error.value = null
-
-        val result = safeApiCall { apiService.getGenreByCode(code) }
-        _isLoading.value = false
-
-        return when (result) {
-            is ApiResult.Success -> ApiResult.Success(result.data.toGenre())
-            is ApiResult.Error -> {
-                _error.value = result.message
-                result
-            }
-            is ApiResult.Loading -> result
-        }
-    }
-
     /**
      * Create new genre via API
      */

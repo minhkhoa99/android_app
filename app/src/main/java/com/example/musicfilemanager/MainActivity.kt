@@ -169,10 +169,6 @@ class MainActivity : ComponentActivity() {
                             musicViewModel = musicViewModel,
                             onBack = { nav.popBackStack() },
                             onItemClick = { id -> nav.navigate(Routes.detail(id)) },
-                            onEditClick = { id -> nav.navigate(Routes.editMusic(id)) },
-                            onDeleteClick = { id ->
-                                // TODO: Xóa nhạc
-                            },
                             onBottomItemClick = { when (it) {
                                 "home" -> nav.navigate(Routes.Stats)
                                 "library" -> nav.navigate(Routes.Library)
