@@ -34,6 +34,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -94,10 +95,8 @@ fun AddMusicScreen(
     var selectedGenreId by remember { mutableStateOf("") }
     var fileUri by remember { mutableStateOf<Uri?>(null) }
 
-    // Lấy dữ liệu hiện có nếu đang ở chế độ chỉnh sửa - LOAD TỪ API
-    val existingMusic = remember(musicId) {
-        musicId?.let { id -> musicViewModel.getMusicFileWithIdByCode(id) }
-    }
+    // State để lưu music detail từ API khi edit
+    var musicDetail by remember { mutableStateOf<com.example.musicfilemanager.model.MusicDetail?>(null) }
     val isEditMode = musicId != null
 
     var title by remember { mutableStateOf("") }
@@ -111,28 +110,44 @@ fun AddMusicScreen(
     var expanded by remember { mutableStateOf(false) }
     var ageRangeExpanded by remember { mutableStateOf(false) }
 
-    // Load dữ liệu vào các field khi có existingMusic
-    LaunchedEffect(existingMusic, genresForMusic) {
-        if (existingMusic != null) {
-            title = existingMusic.music.title
-            artist = existingMusic.music.artist
-            album = existingMusic.music.album
-            duration = existingMusic.music.duration
-            description = existingMusic.description ?: ""
-            ageRange = existingMusic.ageRange ?: ""
+    // Load dữ liệu từ API khi ở chế độ edit
+    LaunchedEffect(musicId) {
+        if (musicId != null) {
+            val apiId = musicId.toIntOrNull()
+            if (apiId != null) {
+                musicDetail = musicViewModel.loadMusicFileById(apiId)
+            }
+        }
+    }
+
+    // Populate form fields khi có musicDetail từ API
+    LaunchedEffect(musicDetail, genresForMusic) {
+        if (musicDetail != null) {
+            title = musicDetail!!.fileName
+            artist = musicDetail!!.artist ?: ""
+            album = musicDetail!!.album ?: ""
+            description = musicDetail!!.description ?: ""
+            ageRange = musicDetail!!.ageRange ?: ""
 
             // Parse year từ releaseYear nếu có
-            existingMusic.releaseYear?.let { year = it.toString() }
+            musicDetail!!.releaseYear?.let { year = it.toString() }
 
-            // Parse size từ fileSize nếu có
-            existingMusic.fileSize?.let { bytes ->
+            // Parse duration từ seconds sang "MM:SS"
+            musicDetail!!.duration?.let { seconds ->
+                val minutes = seconds / 60
+                val secs = seconds % 60
+                duration = String.format("%d:%02d", minutes, secs)
+            }
+
+            // Parse size từ fileSize (bytes) sang "X.X MB"
+            musicDetail!!.fileSize?.let { bytes ->
                 val mb = bytes / (1024.0 * 1024.0)
                 size = String.format("%.1f MB", mb)
             }
 
-            // Set selectedGenreId từ apiGenreId của music để map chính xác
+            // Set selectedGenreId từ genreId của musicDetail
             if (genresForMusic.isNotEmpty()) {
-                val apiGenreId = existingMusic.music.apiGenreId
+                val apiGenreId = musicDetail!!.genreId
                 val matchingGenre = genresForMusic.find { it.apiId == apiGenreId }
                 selectedGenreId = matchingGenre?.code ?: genresForMusic.first().code
             }
@@ -163,6 +178,13 @@ fun AddMusicScreen(
             musicViewModel.clearSuccessMessage()
             musicViewModel.clearError()
             onSaved()
+        }
+    }
+
+    // Cleanup khi component unmount
+    DisposableEffect(Unit) {
+        onDispose {
+            musicViewModel.clearSelectedMusicDetail()
         }
     }
 
@@ -561,27 +583,26 @@ fun AddMusicScreen(
                 val releaseYear = year.toIntOrNull()
 
                 if (isEditMode) {
-                    // Cập nhật file nhạc
-                    val musicWithId = musicViewModel.getMusicFileWithIdByCode(musicId!!)
-                    val apiId = musicWithId?.apiId
-
-                    if (apiId == null) {
-                        localError = "Không tìm thấy ID file nhạc để cập nhật"
+                    // Cập nhật file nhạc - Sử dụng musicDetail từ API
+                    if (musicDetail == null) {
+                        localError = "Không tìm thấy thông tin file nhạc để cập nhật"
                         return@GradientButton
                     }
 
+                    val apiId = musicDetail!!.apiId
+
                     // Giữ nguyên fileCode cũ, không tạo mới
-                    val fileCode = musicWithId.fileCode
+                    val fileCode = musicDetail!!.fileCode
 
                     // Nếu có upload file mới thì dùng downloadLink mới, không thì giữ nguyên
                     val downloadLink = if (uploadedDownloadLink != null) {
                         uploadedDownloadLink
                     } else {
-                        musicWithId.downloadLink
+                        musicDetail!!.downloadLink
                     }
 
-                    val filePath = musicWithId.filePath ?: "/storage/music/${fileCode.lowercase()}.mp3"
-                    val fileType = musicWithId.fileType ?: "mp3"
+                    val filePath = musicDetail!!.filePath ?: "/storage/music/${fileCode.lowercase()}.mp3"
+                    val fileType = musicDetail!!.fileType ?: "mp3"
 
                     musicViewModel.updateMusicFile(
                         id = apiId,

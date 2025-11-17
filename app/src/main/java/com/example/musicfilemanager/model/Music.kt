@@ -49,7 +49,8 @@ data class MusicDetail(
     val description: String?,
     val filePath: String?,
     val fileType: String?,
-    val downloadLink: String?
+    val downloadLink: String?,
+    val ageRange: String? = null
 )
 
 val sampleMusics = listOf(

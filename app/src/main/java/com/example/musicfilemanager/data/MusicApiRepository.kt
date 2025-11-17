@@ -486,7 +486,8 @@ private fun MusicFileResponse.toMusicDetail(): com.example.musicfilemanager.mode
         description = this.description,
         filePath = this.filePath,
         fileType = this.fileType,
-        downloadLink = this.downloadLink
+        downloadLink = this.downloadLink,
+        ageRange = this.ageRange
     )
 }
 
