@@ -40,7 +40,10 @@ data class MusicFileRequest(
     val duration: Int? = null, // in seconds
 
     @SerializedName("fileSize")
-    val fileSize: Long? = null // in bytes
+    val fileSize: Long? = null, // in bytes
+
+    @SerializedName("ageRange")
+    val ageRange: String? = null
 )
 
 /**
@@ -97,6 +100,9 @@ data class MusicFileResponse(
 
     @SerializedName("updatedAt")
     val updatedAt: String? = null,
+
+    @SerializedName("ageRange")
+    val ageRange: String? = null,
 
     @SerializedName("age")
     val age: Int? = null // calculated field

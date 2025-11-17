@@ -113,11 +113,12 @@ class MusicViewModel : ViewModel() {
         releaseYear: Int? = null,
         description: String? = null,
         duration: Int? = null,
-        fileSize: Long? = null
+        fileSize: Long? = null,
+        ageRange: String? = null
     ): Boolean {
         val result = repository.createMusicFile(
             fileCode, fileName, genreId, filePath, fileType, downloadLink,
-            artist, album, releaseYear, description, duration, fileSize
+            artist, album, releaseYear, description, duration, fileSize, ageRange
         )
         return when (result) {
             is ApiResult.Success -> {
@@ -147,12 +148,13 @@ class MusicViewModel : ViewModel() {
         releaseYear: Int? = null,
         description: String? = null,
         duration: Int? = null,
-        fileSize: Long? = null
+        fileSize: Long? = null,
+        ageRange: String? = null
     ) {
         viewModelScope.launch {
             createMusicFileAndWait(
                 fileCode, fileName, genreId, filePath, fileType, downloadLink,
-                artist, album, releaseYear, description, duration, fileSize
+                artist, album, releaseYear, description, duration, fileSize, ageRange
             )
         }
     }
@@ -173,12 +175,13 @@ class MusicViewModel : ViewModel() {
         releaseYear: Int? = null,
         description: String? = null,
         duration: Int? = null,
-        fileSize: Long? = null
+        fileSize: Long? = null,
+        ageRange: String? = null
     ) {
         viewModelScope.launch {
             val result = repository.updateMusicFile(
                 id, fileCode, fileName, genreId, filePath, fileType, downloadLink,
-                artist, album, releaseYear, description, duration, fileSize
+                artist, album, releaseYear, description, duration, fileSize, ageRange
             )
             when (result) {
                 is ApiResult.Success -> {

@@ -19,14 +19,18 @@ data class Genre(
 
 data class Music(
     val id: String, // fileCode for UI display
+    val apiId: Int? = null, // API ID for actions like edit, delete, detail view
     val title: String,
     val artist: String,
     val album: String,
     val duration: String,
     val genreId: String, // UI genre code (pop, rock, jazz, etc.)
     val apiGenreId: Int? = null, // API genre ID (1, 2, 3, 4, etc.) - để lookup động
-    val apiId: Int? = null, // API database ID for editing/deleting
-    val coverUrl: String? = null // dùng khi muốn load ảnh thật
+    val coverUrl: String? = null, // dùng khi muốn load ảnh thật
+    val ageRange: String? = null,
+    val description: String? = null,
+    val releaseYear: Int? = null,
+    val fileSize: Long? = null
 )
 
 /**
@@ -49,7 +53,7 @@ data class MusicDetail(
 )
 
 val sampleMusics = listOf(
-    Music("1", "Bài hát mẫu.mp3", "Nghệ sĩ A", "Album Demo", "4:00", "pop"),
-    Music("2", "Rock Anthem.mp3", "Ban nhạc Z", "The Rock Collection", "3:30", "rock"),
-    Music("3", "Smooth Jazz.wav", "John Colthout", "Blue Notes", "5:12", "jazz")
+    Music(id = "1", apiId = 1, title = "Bài hát mẫu.mp3", artist = "Nghệ sĩ A", album = "Album Demo", duration = "4:00", genreId = "pop"),
+    Music(id = "2", apiId = 2, title = "Rock Anthem.mp3", artist = "Ban nhạc Z", album = "The Rock Collection", duration = "3:30", genreId = "rock"),
+    Music(id = "3", apiId = 3, title = "Smooth Jazz.wav", artist = "John Colthout", album = "Blue Notes", duration = "5:12", genreId = "jazz")
 )

@@ -26,6 +26,8 @@ data class MusicFileWithId(
     val downloadLink: String? = null,
     val description: String? = null,
     val fileSize: Long? = null,
+    val releaseYear: Int? = null,
+    val ageRange: String? = null,
     val createdAt: String? = null,
     val updatedAt: String? = null
 )
@@ -77,6 +79,8 @@ object MusicApiRepository {
                         downloadLink = response.downloadLink,
                         description = response.description,
                         fileSize = response.fileSize,
+                        releaseYear = response.releaseYear,
+                        ageRange = response.ageRange,
                         createdAt = response.createdAt,
                         updatedAt = response.updatedAt
                     )
@@ -133,43 +137,18 @@ object MusicApiRepository {
         _error.value = null
 
         val result = safeApiCall { apiService.filterByGenre(genreId) }
+        _isLoading.value = false
 
-        when (result) {
+        return when (result) {
             is ApiResult.Success -> {
-                // Convert API response to domain model with IDs
-                val musicFileWithIdList = result.data.content.map { response ->
-                    MusicFileWithId(
-                        apiId = response.id,
-                        music = response.toMusic(),
-                        fileCode = response.fileCode,
-                        filePath = response.filePath,
-                        thumbnailPath = response.thumbnailPath,
-                        fileType = response.fileType,
-                        downloadLink = response.downloadLink,
-                        description = response.description,
-                        fileSize = response.fileSize,
-                        createdAt = response.createdAt,
-                        updatedAt = response.updatedAt
-                    )
-                }
-
-                // Store filtered list with IDs
-                _musicFilesWithId.value = musicFileWithIdList
-
-                // Extract music for normal use
-                _musicFiles.value = musicFileWithIdList.map { it.music }
-
-                _isLoading.value = false
-                return ApiResult.Success(_musicFiles.value)
+                val musicList = result.data.content.map { it.toMusic() }
+                ApiResult.Success(musicList)
             }
             is ApiResult.Error -> {
                 _error.value = result.message
-                _isLoading.value = false
-                return result
+                result
             }
-            is ApiResult.Loading -> {
-                return result
-            }
+            is ApiResult.Loading -> result
         }
     }
 
@@ -217,7 +196,7 @@ object MusicApiRepository {
     }
 
     /**
-     * Get music detail by ID for editing
+     * Get music detail by ID
      */
     suspend fun getMusicDetailById(id: Int): ApiResult<com.example.musicfilemanager.model.MusicDetail> {
         _isLoading.value = true
@@ -228,23 +207,9 @@ object MusicApiRepository {
 
         return when (result) {
             is ApiResult.Success -> {
-                val data = result.data
-                val detail = com.example.musicfilemanager.model.MusicDetail(
-                    apiId = data.id,
-                    fileCode = data.fileCode,
-                    fileName = data.fileName,
-                    artist = data.artist,
-                    album = data.album,
-                    duration = data.duration,
-                    fileSize = data.fileSize,
-                    genreId = data.genreId,
-                    releaseYear = data.releaseYear,
-                    description = data.description,
-                    filePath = data.filePath,
-                    fileType = data.fileType,
-                    downloadLink = data.downloadLink
-                )
-                ApiResult.Success(detail)
+                // Convert response to MusicDetail
+                val musicDetail = result.data.toMusicDetail()
+                ApiResult.Success(musicDetail)
             }
             is ApiResult.Error -> {
                 _error.value = result.message
@@ -269,7 +234,8 @@ object MusicApiRepository {
         releaseYear: Int? = null,
         description: String? = null,
         duration: Int? = null,
-        fileSize: Long? = null
+        fileSize: Long? = null,
+        ageRange: String? = null
     ): ApiResult<Music> {
         _isLoading.value = true
         _error.value = null
@@ -286,7 +252,8 @@ object MusicApiRepository {
             releaseYear = releaseYear,
             description = description,
             duration = duration,
-            fileSize = fileSize
+            fileSize = fileSize,
+            ageRange = ageRange
         )
 
         val result = safeApiCall { apiService.createMusicFile(request) }
@@ -325,7 +292,8 @@ object MusicApiRepository {
         releaseYear: Int? = null,
         description: String? = null,
         duration: Int? = null,
-        fileSize: Long? = null
+        fileSize: Long? = null,
+        ageRange: String? = null
     ): ApiResult<Music> {
         _isLoading.value = true
         _error.value = null
@@ -342,7 +310,8 @@ object MusicApiRepository {
             releaseYear = releaseYear,
             description = description,
             duration = duration,
-            fileSize = fileSize
+            fileSize = fileSize,
+            ageRange = ageRange
         )
 
         val result = safeApiCall { apiService.updateMusicFile(id, request) }
@@ -402,16 +371,9 @@ object MusicApiRepository {
     /**
      * Upload music file (Step 1: Upload file only)
      * Gửi fileCode tạm (server required), server sẽ trả về fileCode chính thức
-     * Returns UploadResult with fileCode, downloadLink, and additional metadata
+     * Returns UploadResult(fileCode, downloadLink)
      */
-    data class UploadResult(
-        val fileCode: String,
-        val downloadLink: String,
-        val fileSize: Long? = null,
-        val duration: Int? = null,
-        val artist: String? = null,
-        val album: String? = null
-    )
+    data class UploadResult(val fileCode: String, val downloadLink: String)
 
     suspend fun uploadMusicFile(file: java.io.File, tempFileCode: String, fileName: String): ApiResult<UploadResult> {
         _isLoading.value = true
@@ -452,23 +414,9 @@ object MusicApiRepository {
                 is ApiResult.Success -> {
                     val fileCode = result.data.fileCode
                     val downloadLink = result.data.downloadLink
-                    val fileSize = result.data.fileSize
-                    val duration = result.data.duration
-                    val artist = result.data.artist
-                    val album = result.data.album
-
                     _isLoading.value = false
                     return if (fileCode != null && downloadLink != null) {
-                        ApiResult.Success(
-                            UploadResult(
-                                fileCode = fileCode,
-                                downloadLink = downloadLink,
-                                fileSize = fileSize,
-                                duration = duration,
-                                artist = artist,
-                                album = album
-                            )
-                        )
+                        ApiResult.Success(UploadResult(fileCode, downloadLink))
                     } else {
                         _error.value = "Server không trả về fileCode hoặc downloadLink"
                         ApiResult.Error(_error.value!!)
@@ -507,13 +455,38 @@ object MusicApiRepository {
 private fun MusicFileResponse.toMusic(): Music {
     return Music(
         id = this.fileCode,
+        apiId = this.id, // Chuyển id từ response vào apiId của Music
         title = this.fileName,
         artist = this.artist ?: "Unknown Artist",
         album = this.album ?: "Unknown Album",
         duration = formatDuration(this.duration ?: 0),
         genreId = "unknown", // Sẽ được map động ở UI layer
         apiGenreId = this.genreId, // Lưu API ID để lookup sau
-        apiId = this.id // Lưu database ID cho edit/delete
+        ageRange = this.ageRange,
+        description = this.description,
+        releaseYear = this.releaseYear,
+        fileSize = this.fileSize
+    )
+}
+
+/**
+ * Convert MusicFileResponse to MusicDetail model
+ */
+private fun MusicFileResponse.toMusicDetail(): com.example.musicfilemanager.model.MusicDetail {
+    return com.example.musicfilemanager.model.MusicDetail(
+        apiId = this.id,
+        fileCode = this.fileCode,
+        fileName = this.fileName,
+        artist = this.artist,
+        album = this.album,
+        duration = this.duration,
+        fileSize = this.fileSize,
+        genreId = this.genreId,
+        releaseYear = this.releaseYear,
+        description = this.description,
+        filePath = this.filePath,
+        fileType = this.fileType,
+        downloadLink = this.downloadLink
     )
 }
 
