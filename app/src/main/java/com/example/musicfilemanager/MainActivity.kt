@@ -185,8 +185,7 @@ class MainActivity : ComponentActivity() {
                         MusicDetailScreen(
                             musicId = id,
                             onBack = { nav.popBackStack() },
-                            onEdit = { /* nav to AddMusic with id if you reuse form */ },
-                            onDelete = { nav.popBackStack() }
+
                         )
                     }
                 }

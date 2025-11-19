@@ -31,7 +31,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -56,13 +58,11 @@ fun MusicDetailScreen(
     musicViewModel: MusicViewModel = viewModel(),
     genreViewModel: GenreViewModel = viewModel(),
     onBack: () -> Unit = {},
-    onEdit: () -> Unit = {},
-    onDelete: () -> Unit = {}
 ) {
     var musicDetail by remember { mutableStateOf<MusicDetail?>(null) }
     val isLoading by musicViewModel.isLoading.collectAsState()
     val error by musicViewModel.error.collectAsState()
-
+    val clipboardManager = LocalClipboardManager.current
     // Load music detail from API
     LaunchedEffect(musicId) {
         val id = musicId.toIntOrNull()
@@ -183,10 +183,7 @@ fun MusicDetailScreen(
                                     )
                                     Button(
                                         onClick = {
-                                            // Note: clipboard operations need to be handled differently
-                                            // This is a placeholder - clipboard functionality may need
-                                            // to be implemented using Android's ClipboardManager
-                                            // instead of Compose's LocalClipboardManager
+                                            clipboardManager.setText(AnnotatedString(fullDownloadLink))
                                         },
                                         modifier = Modifier.padding(top = 4.dp)
                                     ) {
