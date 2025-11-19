@@ -601,7 +601,7 @@ fun AddMusicScreen(
                         musicDetail!!.downloadLink
                     }
 
-                    val filePath = musicDetail!!.filePath ?: "/uploads/music/${fileCode.lowercase()}.mp3"
+                    val filePath = musicDetail!!.filePath ?: "/music_app/backend_music_app/uploads/music/${fileCode.lowercase()}.mp3"
                     val fileType = musicDetail!!.fileType ?: "mp3"
 
                     musicViewModel.updateMusicFile(
@@ -632,7 +632,7 @@ fun AddMusicScreen(
                             val downloadLink = uploadedDownloadLink!!
 
                             // Generate filePath và fileType
-                            val filePath = "/uploads/music/${fileCode.lowercase()}.mp3"
+                            val filePath = "/music_app/backend_music_app/uploads/music/${fileCode.lowercase()}.mp3"
                             val fileType = fileUri?.lastPathSegment?.substringAfterLast(".", "mp3") ?: "mp3"
 
                             // Tạo metadata với downloadLink đã có
