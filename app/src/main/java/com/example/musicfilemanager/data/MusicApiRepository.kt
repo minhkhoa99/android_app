@@ -114,15 +114,17 @@ object MusicApiRepository {
         _error.value = null
 
         val result = safeApiCall { apiService.searchMusicFiles(keyword) }
-        _isLoading.value = false
-
+        
         return when (result) {
             is ApiResult.Success -> {
                 val musicList = result.data.content.map { it.toMusic() }
+                _musicFiles.value = musicList
+                _isLoading.value = false
                 ApiResult.Success(musicList)
             }
             is ApiResult.Error -> {
                 _error.value = result.message
+                _isLoading.value = false
                 result
             }
             is ApiResult.Loading -> result
@@ -137,15 +139,17 @@ object MusicApiRepository {
         _error.value = null
 
         val result = safeApiCall { apiService.filterByGenre(genreId) }
-        _isLoading.value = false
-
+        
         return when (result) {
             is ApiResult.Success -> {
                 val musicList = result.data.content.map { it.toMusic() }
+                _musicFiles.value = musicList
+                _isLoading.value = false
                 ApiResult.Success(musicList)
             }
             is ApiResult.Error -> {
                 _error.value = result.message
+                _isLoading.value = false
                 result
             }
             is ApiResult.Loading -> result
@@ -160,15 +164,17 @@ object MusicApiRepository {
         _error.value = null
 
         val result = safeApiCall { apiService.filterByYear(year) }
-        _isLoading.value = false
-
+        
         return when (result) {
             is ApiResult.Success -> {
                 val musicList = result.data.content.map { it.toMusic() }
+                _musicFiles.value = musicList
+                _isLoading.value = false
                 ApiResult.Success(musicList)
             }
             is ApiResult.Error -> {
                 _error.value = result.message
+                _isLoading.value = false
                 result
             }
             is ApiResult.Loading -> result
@@ -556,4 +562,3 @@ private fun formatDuration(seconds: Int): String {
     val secs = seconds % 60
     return String.format("%d:%02d", minutes, secs)
 }
-
